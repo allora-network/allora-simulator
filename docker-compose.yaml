@@ -1,0 +1,18 @@
+services:
+  node:
+    container_name: allora_single_node
+    image: "alloranetwork/allora-chain:v0.5.0"
+    environment:
+      - CHAIN_ID=localnet
+      - MONIKER=validator
+      - APP_HOME=/data
+      - HOME=/data
+    volumes:
+      - ./data:/data
+      - ./scripts:/scripts
+    ports:
+      - "26656-26657:26656-26657"
+      - "1317:1317"
+      - "9090:9090"
+    user: "0:0"
+    entrypoint: /scripts/local_node.sh
