@@ -7,8 +7,17 @@ MONIKER="${MONIKER:-validator}"
 KEYRING_BACKEND=test
 CHAIN_ID="${CHAIN_ID:-localnet}"
 DENOM="uallo"
+RESET_DATA="${RESET_DATA:-false}"
 
 BINARY=allorad
+
+# Check if data should be reset
+if [ -d "${APP_HOME}" ] && [ "$RESET_DATA" = "true" ]; then
+    echo "Removing existing data..."
+    # Remove contents of the directory instead of the directory itself
+    rm -rf ${APP_HOME}/* ${APP_HOME}/.* 2>/dev/null || true
+    rm -f $INIT_FLAG
+fi
 
 echo "To re-initiate the node, remove the file: ${INIT_FLAG}"
 if [ ! -f $INIT_FLAG ]; then

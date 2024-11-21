@@ -7,6 +7,7 @@ services:
       - MONIKER=validator
       - APP_HOME=/data
       - HOME=/data
+      - RESET_DATA=false
     volumes:
       - ./data:/data
       - ./scripts:/scripts
@@ -16,3 +17,63 @@ services:
       - "9090:9090"
     user: "0:0"
     entrypoint: /scripts/local_node.sh
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16-bookworm
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-allora}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  indexer-init:
+    image: alloranetwork/allora-indexer:v0.4.0
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    command:
+      - --MODE=empty
+      - --CONNECTION=${CONNECTION}
+    networks:
+      - app-network
+
+  indexer:
+    image: alloranetwork/allora-indexer:v0.4.0
+    platform: linux/amd64
+    depends_on:
+      db:
+        condition: service_healthy
+      node:
+        condition: service_started
+      indexer-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    command:
+      - --WORKERS_NUM=${WORKERS_NUM:-1}
+      - --NODE=${NODE:-http://allora_single_node:26657}
+      - --CONNECTION=${CONNECTION}
+      - --MODE=${MODE:-sync}
+      - --BOOTSTRAP_BLOCKHEIGHT=${BOOTSTRAP_BLOCKHEIGHT:-1}
+      - --MAX_CONCURRENT_TX_PROCESSING=${MAX_CONCURRENT_TX_PROCESSING:-100}
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

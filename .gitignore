@@ -29,3 +29,6 @@ seedphrase
 
 # config file
 config.json
+
+# data folder
+data
