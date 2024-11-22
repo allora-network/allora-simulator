@@ -3,6 +3,7 @@ package topics
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"cosmossdk.io/math"
@@ -62,7 +63,7 @@ func CreateTopics(
 			protoMsgs[i] = req
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, protoMsgs...)
+		_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, false, protoMsgs...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to broadcast create topic requests: %w", err)
 		}
@@ -91,7 +92,7 @@ func CreateTopics(
 				ActiveReputerQuantile:    alloraMath.MustNewDecFromString("0.2"),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, request)
+			_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, true, request)
 			if err != nil {
 				return nil, fmt.Errorf("failed to broadcast create topic request %d: %w", i, err)
 			}
@@ -99,6 +100,11 @@ func CreateTopics(
 
 			topicIds[i] = topicId
 			topicId++
+
+			// wait a random amount of time between 4 and 20 seconds
+			// try to variate nonce opennings
+			waitTime := rand.Intn(16) + 4
+			time.Sleep(time.Duration(waitTime) * time.Second)
 		}
 
 		log.Printf("Created topics: %v", topicIds)
@@ -126,13 +132,11 @@ func FundTopics(
 		protoMsgs[i] = req
 	}
 
-	_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, protoMsgs...)
+	_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, true, protoMsgs...)
 	if err != nil {
 		return fmt.Errorf("failed to broadcast fund topic requests: %w", err)
 	}
 	actor.Params.Sequence = updatedSeq
-
-	time.Sleep(4 * time.Second) // Wait tx to be confirmed
 
 	return nil
 }

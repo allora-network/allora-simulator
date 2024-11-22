@@ -69,7 +69,7 @@ func BuildAndSignTransaction(
 	}
 
 	signerData := authsigning.SignerData{
-		ChainID:       txParams.ChainID,
+		ChainID:       txParams.Config.ChainID,
 		AccountNumber: txParams.AccNum,
 		Sequence:      sequence,
 	}

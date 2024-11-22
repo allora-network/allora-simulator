@@ -48,7 +48,7 @@ func main() {
 		faucet,
 		config.NumTopics,
 		config.EpochLength,
-		true,
+		config.CreateTopicsSameBlock,
 	)
 	if err != nil {
 		log.Fatalf("Failed to create topics: %v", err)
@@ -66,17 +66,7 @@ func main() {
 		workers := topicActors[:config.WorkersPerTopic]
 		reputers := topicActors[config.WorkersPerTopic:]
 
-		log.Printf("Registering workers in  topic: %d", topicId)
-		err = actors.RegisterWorkers(
-			workers,
-			topicId,
-			simulationData,
-			config.WorkersPerTopic,
-		)
-		if err != nil {
-			log.Fatalf("Error registering workers: %v", err)
-		}
-		time.Sleep(4 * time.Second)
+		time.Sleep(20 * time.Second)
 		log.Printf("Registering reputers and adding stake in  topic: %d", topicId)
 		err = actors.RegisterReputersAndStake(
 			reputers,
@@ -87,7 +77,18 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error registering reputers: %v", err)
 		}
-		time.Sleep(4 * time.Second)
+		time.Sleep(20 * time.Second)
+		log.Printf("Registering workers in  topic: %d", topicId)
+		err = actors.RegisterWorkers(
+			workers,
+			topicId,
+			simulationData,
+			config.WorkersPerTopic,
+		)
+		if err != nil {
+			log.Fatalf("Error registering workers: %v", err)
+		}
+		time.Sleep(20 * time.Second)
 	}
 
 	err = topics.FundTopics(

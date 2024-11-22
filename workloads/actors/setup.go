@@ -44,8 +44,6 @@ func CreateAndFundActors(
 			AccNum:   0,
 			PrivKey:  privKey,
 			PubKey:   pubKey,
-			NodeURL:  "http://localhost:26657",
-			ChainID:  "demo",
 		},
 	}
 	preFundAmount, err := getPreFundAmount(faucet, numActors)
@@ -103,8 +101,6 @@ func createNewActor(numActors int, config *types.Config) *types.Actor {
 			AccNum:   0,
 			PrivKey:  privKey,
 			PubKey:   pubKey,
-			NodeURL:  "http://localhost:26657",
-			ChainID:  "demo",
 		},
 	}
 }
@@ -166,7 +162,7 @@ func fundActors(
 			Outputs: outputs,
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(sender.Params, sendMsg)
+		_, updatedSeq, err := transaction.SendDataWithRetry(sender.Params, true, sendMsg)
 		if err != nil {
 			log.Printf("Error sending worker registration: %v", err.Error())
 			return err
@@ -180,7 +176,6 @@ func fundActors(
 			)
 		}
 	}
-	time.Sleep(4 * time.Second) // Wait for the funds to be reflected in the accounts
 
 	return nil
 }
@@ -215,8 +210,6 @@ func RegisterWorkers(
 ) error {
 	maxConcurrent := 1000
 	sem := make(chan struct{}, maxConcurrent)
-
-	start := time.Now()
 	completed := atomic.Int32{}
 
 	var wg sync.WaitGroup
@@ -235,12 +228,11 @@ func RegisterWorkers(
 				<-sem
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(numWorkers) {
-					elapsed := time.Since(start)
-					log.Printf("Processed %d/%d worker registrations (%.2f%%) for topic: %d in %s\n",
+					log.Printf("Processed %d/%d worker registrations (%.2f%%) for topic: %d\n",
 						count, numWorkers,
 						float64(count)/float64(numWorkers)*100,
 						topicId,
-						elapsed)
+					)
 				}
 			}()
 
@@ -251,7 +243,7 @@ func RegisterWorkers(
 				TopicId:   topicId,
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.Params, request)
+			_, updatedSeq, err := transaction.SendDataWithRetry(worker.Params, false, request)
 			if err != nil {
 				log.Printf("Error sending worker registration: %v", err.Error())
 				return
@@ -263,9 +255,6 @@ func RegisterWorkers(
 
 	wg.Wait()
 
-	totalTime := time.Since(start)
-	log.Printf("Total worker registration time: %s\n", totalTime)
-
 	return nil
 }
 
@@ -276,7 +265,7 @@ func RegisterReputersAndStake(
 	data *simulation.SimulationData,
 	numReputers int,
 ) error {
-	maxConcurrent := 100
+	maxConcurrent := 1000
 	sem := make(chan struct{}, maxConcurrent)
 	completed := atomic.Int32{}
 
@@ -316,7 +305,7 @@ func RegisterReputersAndStake(
 				Amount:  cosmosmath.NewIntFromUint64(stakeToAdd),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.Params, registerRequest, stakeRequest)
+			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.Params, true, registerRequest, stakeRequest)
 			if err != nil {
 				log.Printf("Error sending reputer stake: %v", err.Error())
 				return

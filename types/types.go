@@ -3,12 +3,11 @@ package types
 import "strconv"
 
 type Config struct {
-	Chain                 string      `json:"chain"`
+	ChainID               string      `json:"chain_id"`
 	Denom                 string      `json:"denom"`
 	Prefix                string      `json:"prefix"`
 	GasPerByte            int64       `json:"gas_per_byte"`
 	BaseGas               int64       `json:"base_gas"`
-	TimeoutHeight         int64       `json:"timeout_height"`
 	EpochLength           int64       `json:"epoch_length"`
 	NumTopics             int         `json:"num_topics"`
 	WorkersPerTopic       int         `json:"workers_per_topic"`

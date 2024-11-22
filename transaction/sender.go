@@ -22,6 +22,7 @@ var cdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 // Loop handles the main transaction broadcasting logic
 func SendDataWithRetry(
 	txParams *types.TransactionParams,
+	waitForTx bool,
 	msgs ...sdktypes.Msg,
 ) (*coretypes.ResultBroadcastTx, uint64, error) {
 	sequence := txParams.Sequence
@@ -31,12 +32,11 @@ func SendDataWithRetry(
 	for retryCount := int64(0); retryCount <= maxRetries; retryCount++ {
 		currentSequence := sequence
 
-		resp, _, err := SendTransactionViaRPC(txParams, currentSequence, msgs...)
+		resp, _, err := SendTransactionViaRPC(txParams, currentSequence, waitForTx, msgs...)
 		if err != nil {
-			fmt.Printf("Error broadcasting transaction: %v\n", err)
 			// if sequence mismatch, handle it and retry
-			if resp != nil && resp.Code == 32 {
-				resp, newSeq, err := handleSequenceMismatch(txParams, sequence, err, msgs...)
+			if strings.Contains(err.Error(), "account sequence mismatch") {
+				resp, newSeq, err := handleSequenceMismatch(txParams, sequence, waitForTx, err, msgs...)
 				if err == nil {
 					sequence = newSeq
 					return resp, sequence, nil
@@ -46,7 +46,14 @@ func SendDataWithRetry(
 			// if mempool is full, retry
 			if strings.Contains(err.Error(), "mempool is full") {
 				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
-				fmt.Printf("Mempool is full, retrying in %d seconds...\n", delay/time.Second)
+				// fmt.Printf("Mempool is full, retrying in %d seconds...\n", delay/time.Second)
+				time.Sleep(delay)
+				continue
+			}
+			// connection issues
+			if strings.Contains(err.Error(), "connection reset by peer") {
+				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
+				// fmt.Printf("Connection reset by peer, retrying in %d seconds...\n", delay/time.Second)
 				time.Sleep(delay)
 				continue
 			}
@@ -61,7 +68,7 @@ func SendDataWithRetry(
 }
 
 // SendTransactionViaRPC sends a transaction using the provided TransactionParams and sequence number.
-func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, string, error) {
+func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, waitForTx bool, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, string, error) {
 	encodingConfig := moduletestutil.MakeTestEncodingConfig()
 	encodingConfig.Codec = cdc
 
@@ -74,7 +81,7 @@ func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, m
 	}
 
 	// Broadcast the transaction via RPC
-	resp, err := Transaction(txBytes, txParams.NodeURL)
+	resp, err := Transaction(txBytes, txParams.Config.Nodes.RPC[0], waitForTx)
 	if err != nil {
 		return resp, string(txBytes), fmt.Errorf("failed to broadcast transaction: %w", err)
 	}
@@ -83,24 +90,28 @@ func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, m
 }
 
 // Transaction broadcasts the transaction bytes to the given RPC endpoint.
-func Transaction(txBytes []byte, rpcEndpoint string) (*coretypes.ResultBroadcastTx, error) {
+func Transaction(txBytes []byte, rpcEndpoint string, waitForTx bool) (*coretypes.ResultBroadcastTx, error) {
 	client, err := client.GetClient(rpcEndpoint)
 	if err != nil {
 		return nil, err
 	}
+	resp, err := client.BroadcastTx(txBytes, waitForTx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to broadcast transaction: %w", err)
+	}
 
-	return client.BroadcastTx(txBytes)
+	return resp, nil
 }
 
 // handleSequenceMismatch handles the case where a transaction fails due to sequence mismatch
-func handleSequenceMismatch(txParams *types.TransactionParams, sequence uint64, err error, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, uint64, error) {
+func handleSequenceMismatch(txParams *types.TransactionParams, sequence uint64, waitForTx bool, err error, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, uint64, error) {
 	expectedSeq, parseErr := extractExpectedSequence(err.Error())
 	if parseErr != nil {
 		fmt.Printf("Failed to parse expected sequence: %v\n", parseErr)
 		return nil, sequence, nil
 	}
 
-	resp, _, err := SendTransactionViaRPC(txParams, expectedSeq, msgs...)
+	resp, _, err := SendTransactionViaRPC(txParams, expectedSeq, waitForTx, msgs...)
 	if err != nil {
 		return nil, expectedSeq, err
 	}

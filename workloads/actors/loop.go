@@ -169,7 +169,7 @@ func createAndSendWorkerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.Params, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(worker.Params, false, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           worker.Addr,
 				WorkerDataBundle: workerData,
 			})
@@ -286,7 +286,7 @@ func createAndSendReputerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.Params, &emissionstypes.InsertReputerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.Params, false, &emissionstypes.InsertReputerPayloadRequest{
 				Sender:             reputer.Addr,
 				ReputerValueBundle: valueBundle,
 			})
