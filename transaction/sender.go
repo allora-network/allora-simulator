@@ -46,14 +46,12 @@ func SendDataWithRetry(
 			// if mempool is full, retry
 			if strings.Contains(err.Error(), "mempool is full") {
 				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
-				// fmt.Printf("Mempool is full, retrying in %d seconds...\n", delay/time.Second)
 				time.Sleep(delay)
 				continue
 			}
 			// connection issues
 			if strings.Contains(err.Error(), "connection reset by peer") {
 				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
-				// fmt.Printf("Connection reset by peer, retrying in %d seconds...\n", delay/time.Second)
 				time.Sleep(delay)
 				continue
 			}
@@ -107,7 +105,6 @@ func Transaction(txBytes []byte, rpcEndpoint string, waitForTx bool) (*coretypes
 func handleSequenceMismatch(txParams *types.TransactionParams, sequence uint64, waitForTx bool, err error, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, uint64, error) {
 	expectedSeq, parseErr := extractExpectedSequence(err.Error())
 	if parseErr != nil {
-		fmt.Printf("Failed to parse expected sequence: %v\n", parseErr)
 		return nil, sequence, nil
 	}
 
