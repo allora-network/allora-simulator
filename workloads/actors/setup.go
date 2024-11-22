@@ -5,7 +5,6 @@ import (
 	"log"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	cosmosmath "cosmossdk.io/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
