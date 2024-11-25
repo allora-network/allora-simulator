@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -55,6 +56,8 @@ func SendDataWithRetry(
 				time.Sleep(delay)
 				continue
 			}
+			// print if other errors
+			log.Printf("Error: %v\n", err)
 			continue
 		}
 
