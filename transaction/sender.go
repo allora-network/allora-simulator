@@ -35,6 +35,9 @@ func SendDataWithRetry(
 
 		resp, _, err := SendTransactionViaRPC(txParams, currentSequence, waitForTx, msgs...)
 		if err != nil {
+			log.Printf("Transaction failed: %v\n", err)
+			log.Printf("Handling error and retrying...")
+
 			// if sequence mismatch, handle it and retry
 			if strings.Contains(err.Error(), "account sequence mismatch") {
 				resp, newSeq, err := handleSequenceMismatch(txParams, sequence, waitForTx, err, msgs...)
@@ -60,7 +63,10 @@ func SendDataWithRetry(
 			log.Printf("Error: %v\n", err)
 			continue
 		}
-
+		if resp != nil {
+			log.Printf("Transaction sent successfully: %v\n", resp.Hash.String())
+		}
+	
 		sequence++
 		return resp, sequence, nil
 	}
