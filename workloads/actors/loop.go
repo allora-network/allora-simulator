@@ -21,7 +21,6 @@ func StartActorLoops(
 	data *simulation.SimulationData,
 	config *types.Config,
 	topicIds []uint64,
-	timeoutMinutes int,
 ) error {
 	log.Printf("Starting submission loop for %d topics", len(topicIds))
 
@@ -73,8 +72,8 @@ func StartActorLoops(
 		return err
 	case <-done:
 		return nil
-	case <-time.After(time.Duration(timeoutMinutes) * time.Minute):
-		return fmt.Errorf("simulation timed out after %d minutes", timeoutMinutes)
+	case <-time.After(time.Duration(config.TimeoutMinutes) * time.Minute):
+		return fmt.Errorf("simulation timed out after %d minutes", config.TimeoutMinutes)
 	}
 }
 

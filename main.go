@@ -103,7 +103,6 @@ func main() {
 		simulationData,
 		&config,
 		topicIds,
-		30,
 	)
 	if err != nil {
 		log.Fatalf("Error starting actor loops: %v", err)
