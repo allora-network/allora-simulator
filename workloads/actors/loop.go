@@ -72,7 +72,14 @@ func StartActorLoops(
 		return err
 	case <-done:
 		return nil
-	case <-time.After(time.Duration(config.TimeoutMinutes) * time.Minute):
+	case <-func() <-chan time.Time {
+		if config.TimeoutMinutes == -1 {
+			log.Printf("Timeout is disabled")
+			return make(<-chan time.Time)
+		}
+		log.Printf("Timeout is enabled: %d minutes", config.TimeoutMinutes)
+		return time.After(time.Duration(config.TimeoutMinutes) * time.Minute)
+	}():
 		return fmt.Errorf("simulation timed out after %d minutes", config.TimeoutMinutes)
 	}
 }
