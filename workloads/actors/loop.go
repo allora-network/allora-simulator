@@ -345,7 +345,7 @@ func createReputerValueBundle(
 	reputerValueBundle := &emissionstypes.ReputerValueBundle{
 		ValueBundle: &valueBundle,
 		Signature:   sig,
-		Pubkey:      reputer.Params.PubKey.String(),
+		Pubkey:      hex.EncodeToString(reputer.Params.PubKey.Bytes()),
 	}
 
 	return reputerValueBundle, nil
