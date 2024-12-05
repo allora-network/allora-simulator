@@ -22,7 +22,8 @@ go mod tidy
 
 ## Configuring 
 - Copy `config.example.json` to `config.json`
-- Adjust parameters as needed (especially node endpoints)
+- Copy `.env.example` to `.env`
+- Adjust parameters as needed
 
 ## Running the Simulator
 
@@ -32,13 +33,12 @@ There are two ways to run the simulator:
 
 This method automatically sets up a local node and creates the necessary accounts:
 
-1. Copy `.env.db.example` to `.env.db`
-2. Adjust parameters as needed
-3. Run the following command to start the simulator:
+1. Ensure you have created the `.env` file from the example
+2. Run the following command to start the simulator:
    ```bash
    docker compose up
    ```
-The script will automatically generate a faucet account and save its seedphrase in the `scripts/seedphrase` file.
+3. The script will automatically generate a faucet account and save its seedphrase in the `scripts/seedphrase` file.
 
 ### Method 2: Pointing to an Existing Chain
 
