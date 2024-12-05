@@ -24,11 +24,29 @@ go mod tidy
 - Copy `config.example.json` to `config.json`
 - Adjust parameters as needed (especially node endpoints)
 
-## Set Up Faucet Account
-- Create `seedphrase` file with your funded wallet's mnemonic
-- Ensure wallet has sufficient funds for all simulated actors
+## Running the Simulator
 
-## Run the Simulator
-```bash
-go run main.go
-```
+There are two ways to run the simulator:
+
+### Method 1: Using Docker Compose (Creating a New Chain)
+
+This method automatically sets up a local node and creates the necessary accounts:
+
+1. Copy `.env.db.example` to `.env.db`
+2. Adjust parameters as needed
+3. Run the following command to start the simulator:
+   ```bash
+   docker compose up
+   ```
+The script will automatically generate a faucet account and save its seedphrase in the `scripts/seedphrase` file.
+
+### Method 2: Pointing to an Existing Chain
+
+If you want to run the simulator against an existing chain:
+
+1. Create a `seedphrase` file inside the `scripts` folder with your funded wallet's mnemonic
+2. Ensure the wallet has sufficient funds for all simulated actors
+3. Run the simulator:
+   ```bash
+   go run main.go
+   ```
