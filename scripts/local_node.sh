@@ -32,7 +32,7 @@ if [ ! -f $INIT_FLAG ]; then
 
     # Create accounts
     $BINARY --home $APP_HOME keys add ${MONIKER} --keyring-backend $KEYRING_BACKEND > $APP_HOME/${MONIKER}.account_info 2>&1
-    $BINARY --home $APP_HOME keys add faucet --keyring-backend $KEYRING_BACKEND > $APP_HOME/faucet.account_info 2>&1
+    $BINARY --home $APP_HOME keys add faucet --keyring-backend $KEYRING_BACKEND 2>&1 | tee $APP_HOME/faucet.account_info | tail -n 1 | tr -d '\n' | tee $APP_HOME/seedphrase /scripts/seedphrase > /dev/null
 
     # Add genesis accounts
     $BINARY --home=${APP_HOME} genesis add-genesis-account $MONIKER 10000000allo --keyring-backend test

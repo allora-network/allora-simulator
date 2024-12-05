@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("Failed to parse config: %v", err)
 	}
 
-	mnemonic, err := os.ReadFile("seedphrase")
+	mnemonic, err := os.ReadFile("scripts/seedphrase")
 	if err != nil {
 		log.Fatalf("Failed to read seed phrase: %v", err)
 	}
