@@ -97,11 +97,22 @@ func runTopicWorkersLoop(
 			return err
 		} else {
 			if latestOpenWorkerNonce > latestNonceHeightActedUpon {
-				latestNonceHeightActedUpon = latestOpenWorkerNonce
 				log.Printf("Worker nonce opened for topic: %d at height: %d", topicId, latestOpenWorkerNonce)
+				// previousActiveSetNonce will be used to get the active set of workers from previous epoch for the forecasts
+				previousActiveSetNonce := latestNonceHeightActedUpon
+				latestNonceHeightActedUpon = latestOpenWorkerNonce
+
+				// Get all workers for the topic
 				workers := data.GetWorkersForTopic(topicId)
 
-				wasError := createAndSendWorkerPayloads(topicId, workers, latestOpenWorkerNonce)
+				// Get the active set of workers from previous epoch for the forecasts
+				previousActiveWorkersAddresses, err := lib.GetActiveWorkersForTopic(config, topicId, previousActiveSetNonce)
+				if err != nil {
+					return err
+				}
+
+				log.Printf("Building and committing worker payload for topic: %d", topicId)
+				wasError := createAndSendWorkerPayloads(topicId, workers, latestOpenWorkerNonce, previousActiveWorkersAddresses)
 				if wasError {
 					log.Printf("Error building and committing worker payload for topic: %d", topicId)
 				}
@@ -125,13 +136,18 @@ func runReputersProcess(
 			log.Printf("Error getting latest open reputer nonce on topic - node availability issue?: %v", err)
 		} else {
 			if latestOpenReputerNonce > latestNonceHeightActedUpon {
-				latestNonceHeightActedUpon = latestOpenReputerNonce
 				log.Printf("Reputer nonce opened for topic: %d at height: %d", topicId, latestOpenReputerNonce)
+				latestNonceHeightActedUpon = latestOpenReputerNonce
+
+				// Get all reputers for the topic
+				reputers := data.GetReputersForTopic(topicId)
+
+				// Get the active set of workers from actual epoch
 				activeWorkersAddresses, err := lib.GetActiveWorkersForTopic(config, topicId, latestOpenReputerNonce)
 				if err != nil {
 					return err
 				}
-				reputers := data.GetReputersForTopic(topicId)
+
 				log.Printf("Building and committing reputer payload for topic: %d", topicId)
 				wasError := createAndSendReputerPayloads(topicId, reputers, activeWorkersAddresses, latestOpenReputerNonce)
 				if wasError {
@@ -149,6 +165,7 @@ func createAndSendWorkerPayloads(
 	topicId uint64,
 	workers []*types.Actor,
 	workerNonce int64,
+	previousActiveInferersAddresses []string,
 ) bool {
 	completed := atomic.Int32{}
 	start := time.Now()
@@ -169,7 +186,7 @@ func createAndSendWorkerPayloads(
 				}
 			}()
 
-			workerData, err := createWorkerDataBundle(topicId, workerNonce, worker, workers)
+			workerData, err := createWorkerDataBundle(topicId, workerNonce, worker, previousActiveInferersAddresses)
 			if err != nil {
 				log.Printf("Error creating worker data bundle: %v", err.Error())
 				return
@@ -197,22 +214,10 @@ func createWorkerDataBundle(
 	topicId uint64,
 	blockHeight int64,
 	inferer *types.Actor,
-	workers []*types.Actor,
+	previousActiveInferersAddresses []string,
 ) (*emissionstypes.WorkerDataBundle, error) {
-	// TODO: Add forecasts for specific workers (top workers)
-	// Iterate workerAddresses to get the worker address, and generate as many forecasts as there are workers
-	// forecastElements := make([]*emissionstypes.ForecastElement, 0)
-	// for key := range workers {
-	// 	forecastElements = append(forecastElements, &emissionstypes.ForecastElement{
-	// 		Inferer: workers[key].addr,
-	// 		Value:   alloraMath.NewDecFromInt64(int64(m.Client.Rand.Intn(51) + 50)),
-	// 	})
-	// }
-	infererAddress := inferer.Addr
-	infererValue := alloraMath.NewDecFromInt64(int64(rand.Intn(300) + 3000))
-
 	workerDataBundle := &emissionstypes.WorkerDataBundle{
-		Worker: infererAddress,
+		Worker: inferer.Addr,
 		Nonce: &emissionstypes.Nonce{
 			BlockHeight: blockHeight,
 		},
@@ -221,31 +226,41 @@ func createWorkerDataBundle(
 			Inference: &emissionstypes.Inference{
 				TopicId:     topicId,
 				BlockHeight: blockHeight,
-				Inferer:     infererAddress,
-				Value:       infererValue,
+				Inferer:     inferer.Addr,
+				Value:       alloraMath.NewDecFromInt64(int64(rand.Intn(300) + 3000)),
 				ExtraData:   nil,
 				Proof:       "",
 			},
 			Forecast: nil,
-			// Forecast: &emissionstypes.Forecast{
-			// 	TopicId:          topicId,
-			// 	BlockHeight:      blockHeight,
-			// 	Forecaster:       infererAddress,
-			// 	ForecastElements: nil,
-			// 	ExtraData:        nil,
-			// },
 		},
 		InferencesForecastsBundleSignature: nil,
 		Pubkey:                             "",
 	}
 
-	// Sign
+	forecastElements := make([]*emissionstypes.ForecastElement, 0)
+	for _, previousActiveInfererAddress := range previousActiveInferersAddresses {
+		forecastElements = append(forecastElements, &emissionstypes.ForecastElement{
+			Inferer: previousActiveInfererAddress,
+			Value:   alloraMath.NewDecFromInt64(int64(rand.Intn(51) + 50)),
+		})
+	}
+	// If there are forecast elements, create a forecast
+	if len(forecastElements) != 0 {
+		workerDataBundle.InferenceForecastsBundle.Forecast = &emissionstypes.Forecast{
+			TopicId:          topicId,
+			BlockHeight:      blockHeight,
+			Forecaster:       inferer.Addr,
+			ForecastElements: forecastElements,
+			ExtraData:        nil,
+		}
+	}
+
+	// Sign transaction
 	src := make([]byte, 0)
 	src, err := workerDataBundle.InferenceForecastsBundle.XXX_Marshal(src, true)
 	if err != nil {
 		return nil, err
 	}
-
 	sig, err := inferer.Params.PrivKey.Sign(src)
 	if err != nil {
 		return nil, err
@@ -329,13 +344,13 @@ func createReputerValueBundle(
 		},
 		OneOutInfererForecasterValues: nil,
 	}
-	// Sign
+
+	// Sign transaction
 	src := make([]byte, 0)
 	src, err := valueBundle.XXX_Marshal(src, true)
 	if err != nil {
 		return nil, err
 	}
-
 	sig, err := reputer.Params.PrivKey.Sign(src)
 	if err != nil {
 		return nil, err
