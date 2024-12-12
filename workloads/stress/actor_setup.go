@@ -25,7 +25,7 @@ func CreateAndFundActors(
 	epochLength int64,
 ) (
 	faucet *types.Actor,
-	simulationData *SimulationData,
+	simulationData *StressSimulationData,
 ) {
 	var err error
 	// fund all actors from the faucet with some amount
@@ -73,7 +73,7 @@ func CreateAndFundActors(
 		}
 	}
 
-	data := SimulationData{
+	data := StressSimulationData{
 		Faucet:                    faucet,
 		EpochLength:               int64(epochLength),
 		Actors:                    actorsList,
@@ -204,7 +204,7 @@ func getPreFundAmount(
 func RegisterWorkers(
 	actors []*types.Actor,
 	topicId uint64,
-	data *SimulationData,
+	data *StressSimulationData,
 	numWorkers int,
 ) error {
 	maxConcurrent := 1000
@@ -261,7 +261,7 @@ func RegisterWorkers(
 func RegisterReputersAndStake(
 	actors []*types.Actor,
 	topicId uint64,
-	data *SimulationData,
+	data *StressSimulationData,
 	numReputers int,
 ) error {
 	maxConcurrent := 1000

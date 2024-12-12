@@ -10,7 +10,8 @@ type Config struct {
 	BaseGas               int64          `json:"base_gas"`
 	EpochLength           int64          `json:"epoch_length"`
 	NumTopics             int            `json:"num_topics"`
-	WorkersPerTopic       int            `json:"workers_per_topic"`
+	InferersPerTopic      int            `json:"inferers_per_topic"`
+	ForecastersPerTopic   int            `json:"forecasters_per_topic"`
 	ReputersPerTopic      int            `json:"reputers_per_topic"`
 	CreateTopicsSameBlock bool           `json:"create_topics_same_block"`
 	TimeoutMinutes        int64          `json:"timeout_minutes"`
@@ -122,12 +123,28 @@ type Inference struct {
 // RESEARCH MODULE
 
 type ResearchConfig struct {
-	InitialPrice         float64 `json:"initial_price"`
-	Drift                float64 `json:"drift"`
-	Volatility           float64 `json:"volatility"`
-	BaseExperienceFactor float64 `json:"base_experience_factor"`
-	ExperienceGrowth     float64 `json:"experience_growth"`
-	OutperformValue      float64 `json:"outperform_value"`
+	InitialPrice         float64     `json:"initial_price"`
+	Drift                float64     `json:"drift"`
+	Volatility           float64     `json:"volatility"`
+	BaseExperienceFactor float64     `json:"base_experience_factor"`
+	ExperienceGrowth     float64     `json:"experience_growth"`
+	OutperformValue      float64     `json:"outperform_value"`
+	Topic                TopicConfig `json:"topic"`
+}
+
+type TopicConfig struct {
+	LossMethod               string `json:"loss_method"`
+	EpochLength              int64  `json:"epoch_length"`
+	GroundTruthLag           int64  `json:"ground_truth_lag"`
+	WorkerSubmissionWindow   int64  `json:"worker_submission_window"`
+	PNorm                    string `json:"p_norm"`
+	AlphaRegret              string `json:"alpha_regret"`
+	AllowNegative            bool   `json:"allow_negative"`
+	Epsilon                  string `json:"epsilon"`
+	MeritSortitionAlpha      string `json:"merit_sortition_alpha"`
+	ActiveInfererQuantile    string `json:"active_inferer_quantile"`
+	ActiveForecasterQuantile string `json:"active_forecaster_quantile"`
+	ActiveReputerQuantile    string `json:"active_reputer_quantile"`
 }
 
 type ResearchParams struct {

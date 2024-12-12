@@ -34,7 +34,8 @@ func main() {
 	sdkConfig.SetBech32PrefixForConsensusNode(config.Prefix+"valcons", config.Prefix+"valconspub")
 	sdkConfig.Seal()
 
-	numActors := (config.WorkersPerTopic + config.ReputersPerTopic) * config.NumTopics
+	workersPerTopic := config.InferersPerTopic + config.ForecastersPerTopic
+	numActors := (workersPerTopic + config.ReputersPerTopic) * config.NumTopics
 	faucet, simulationData := stress.CreateAndFundActors(
 		&config,
 		mnemonic,
@@ -54,7 +55,7 @@ func main() {
 	}
 
 	// Calculate actors per topic
-	actorsPerTopic := config.WorkersPerTopic + config.ReputersPerTopic
+	actorsPerTopic := workersPerTopic + config.ReputersPerTopic
 
 	// Register actors
 	for i, topicId := range topicIds {
@@ -62,8 +63,8 @@ func main() {
 		startIdx := i * actorsPerTopic
 		topicActors := simulationData.Actors[startIdx : startIdx+actorsPerTopic]
 
-		workers := topicActors[:config.WorkersPerTopic]
-		reputers := topicActors[config.WorkersPerTopic:]
+		workers := topicActors[:workersPerTopic]
+		reputers := topicActors[workersPerTopic:]
 
 		time.Sleep(20 * time.Second)
 		log.Printf("Registering reputers and adding stake in  topic: %d", topicId)
@@ -82,7 +83,7 @@ func main() {
 			workers,
 			topicId,
 			simulationData,
-			config.WorkersPerTopic,
+			workersPerTopic,
 		)
 		if err != nil {
 			log.Fatalf("Error registering workers: %v", err)

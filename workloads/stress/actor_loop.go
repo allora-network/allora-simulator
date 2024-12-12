@@ -17,7 +17,7 @@ import (
 )
 
 func StartActorLoops(
-	data *SimulationData,
+	data *StressSimulationData,
 	config *types.Config,
 	topicIds []uint64,
 ) error {
@@ -85,7 +85,7 @@ func StartActorLoops(
 
 // Will check for nonce opened every 4s and if opened, will produce inferences and forecasts
 func runTopicWorkersLoop(
-	data *SimulationData,
+	data *StressSimulationData,
 	config *types.Config,
 	topicId uint64,
 ) error {
@@ -124,7 +124,7 @@ func runTopicWorkersLoop(
 
 // Will check for nonce opened every 4s and if opened, will produce reputation
 func runReputersProcess(
-	data *SimulationData,
+	data *StressSimulationData,
 	config *types.Config,
 	topicId uint64,
 ) error {

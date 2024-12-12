@@ -74,14 +74,14 @@ func CreateAndFundActors(
 	}
 
 	data := ResearchSimulationData{
-		Faucet:                    faucet,
-		EpochLength:               int64(epochLength),
-		Actors:                    actorsList,
-		RegisteredInferersByTopic: map[uint64][]*types.Actor{},
+		Faucet:                       faucet,
+		EpochLength:                  int64(epochLength),
+		Actors:                       actorsList,
+		RegisteredInferersByTopic:    map[uint64][]*types.Actor{},
 		RegisteredForecastersByTopic: map[uint64][]*types.Actor{},
-		RegisteredReputersByTopic: map[uint64][]*types.Actor{},
-		FailOnErr:                 false,
-		Mu:                        sync.RWMutex{},
+		RegisteredReputersByTopic:    map[uint64][]*types.Actor{},
+		FailOnErr:                    false,
+		Mu:                           sync.RWMutex{},
 	}
 
 	return faucet, &data
@@ -207,6 +207,7 @@ func RegisterWorkers(
 	topicId uint64,
 	data *ResearchSimulationData,
 	numWorkers int,
+	inferers bool,
 ) error {
 	maxConcurrent := 1000
 	sem := make(chan struct{}, maxConcurrent)
@@ -253,7 +254,11 @@ func RegisterWorkers(
 			// Set the research params
 			worker.ResearchParams = InitializeWorkerResearchParams(worker.TxParams.Config.Research.Volatility)
 
-			// data.AddWorkerRegistration(topicId, worker)
+			if inferers {
+				data.AddInfererRegistration(topicId, worker)
+			} else {
+				data.AddForecasterRegistration(topicId, worker)
+			}
 		}(worker, i)
 	}
 
