@@ -1,4 +1,4 @@
-package actors
+package stress
 
 import (
 	"encoding/hex"
@@ -14,11 +14,10 @@ import (
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/transaction"
 	"github.com/allora-network/allora-simulator/types"
-	simulation "github.com/allora-network/allora-simulator/workloads/common"
 )
 
 func StartActorLoops(
-	data *simulation.SimulationData,
+	data *SimulationData,
 	config *types.Config,
 	topicIds []uint64,
 ) error {
@@ -86,7 +85,7 @@ func StartActorLoops(
 
 // Will check for nonce opened every 4s and if opened, will produce inferences and forecasts
 func runTopicWorkersLoop(
-	data *simulation.SimulationData,
+	data *SimulationData,
 	config *types.Config,
 	topicId uint64,
 ) error {
@@ -125,7 +124,7 @@ func runTopicWorkersLoop(
 
 // Will check for nonce opened every 4s and if opened, will produce reputation
 func runReputersProcess(
-	data *simulation.SimulationData,
+	data *SimulationData,
 	config *types.Config,
 	topicId uint64,
 ) error {
@@ -192,14 +191,14 @@ func createAndSendWorkerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.Params, false, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(worker.TxParams, false, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           worker.Addr,
 				WorkerDataBundle: workerData,
 			})
 			if err != nil {
 				log.Printf("Error sending worker payload: %v", err.Error())
 			}
-			worker.Params.Sequence = updatedSeq
+			worker.TxParams.Sequence = updatedSeq
 		}(worker)
 	}
 
@@ -261,12 +260,12 @@ func createWorkerDataBundle(
 	if err != nil {
 		return nil, err
 	}
-	sig, err := inferer.Params.PrivKey.Sign(src)
+	sig, err := inferer.TxParams.PrivKey.Sign(src)
 	if err != nil {
 		return nil, err
 	}
 
-	workerPublicKeyBytes := inferer.Params.PubKey.Bytes()
+	workerPublicKeyBytes := inferer.TxParams.PubKey.Bytes()
 	workerDataBundle.InferencesForecastsBundleSignature = sig
 	workerDataBundle.Pubkey = hex.EncodeToString(workerPublicKeyBytes)
 
@@ -307,14 +306,14 @@ func createAndSendReputerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.Params, false, &emissionstypes.InsertReputerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, false, &emissionstypes.InsertReputerPayloadRequest{
 				Sender:             reputer.Addr,
 				ReputerValueBundle: valueBundle,
 			})
 			if err != nil {
 				log.Printf("Error sending reputer payload: %v", err.Error())
 			}
-			reputer.Params.Sequence = updatedSeq
+			reputer.TxParams.Sequence = updatedSeq
 		}(reputer)
 	}
 
@@ -351,7 +350,7 @@ func createReputerValueBundle(
 	if err != nil {
 		return nil, err
 	}
-	sig, err := reputer.Params.PrivKey.Sign(src)
+	sig, err := reputer.TxParams.PrivKey.Sign(src)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +359,7 @@ func createReputerValueBundle(
 	reputerValueBundle := &emissionstypes.ReputerValueBundle{
 		ValueBundle: &valueBundle,
 		Signature:   sig,
-		Pubkey:      hex.EncodeToString(reputer.Params.PubKey.Bytes()),
+		Pubkey:      hex.EncodeToString(reputer.TxParams.PubKey.Bytes()),
 	}
 
 	return reputerValueBundle, nil

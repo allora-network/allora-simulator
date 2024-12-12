@@ -1,4 +1,4 @@
-package actors
+package stress
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/transaction"
 	"github.com/allora-network/allora-simulator/types"
-	simulation "github.com/allora-network/allora-simulator/workloads/common"
+	"github.com/allora-network/allora-simulator/workloads/common"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -25,19 +25,19 @@ func CreateAndFundActors(
 	epochLength int64,
 ) (
 	faucet *types.Actor,
-	simulationData *simulation.SimulationData,
+	simulationData *SimulationData,
 ) {
 	var err error
 	// fund all actors from the faucet with some amount
 	// give everybody the same amount of money to start with
 	actorsList := createActors(numActors, config)
 
-	privKey, pubKey, faucetAddr := GetPrivKey(config.Prefix, faucetMnemonic)
+	privKey, pubKey, faucetAddr := common.GetPrivKey(config.Prefix, faucetMnemonic)
 
 	faucet = &types.Actor{
 		Name: "faucet",
 		Addr: faucetAddr,
-		Params: &types.TransactionParams{
+		TxParams: &types.TransactionParams{
 			Config:   config,
 			Sequence: 0,
 			AccNum:   0,
@@ -51,7 +51,7 @@ func CreateAndFundActors(
 	}
 
 	// Update faucet account number
-	faucet.Params.Sequence, faucet.Params.AccNum, err = lib.GetAccountInfo(faucet.Addr, faucet.Params.Config)
+	faucet.TxParams.Sequence, faucet.TxParams.AccNum, err = lib.GetAccountInfo(faucet.Addr, faucet.TxParams.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,13 +67,13 @@ func CreateAndFundActors(
 
 	//Update account numbers
 	for _, actor := range actorsList {
-		actor.Params.Sequence, actor.Params.AccNum, err = lib.GetAccountInfo(actor.Addr, actor.Params.Config)
+		actor.TxParams.Sequence, actor.TxParams.AccNum, err = lib.GetAccountInfo(actor.Addr, actor.TxParams.Config)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	data := simulation.SimulationData{
+	data := SimulationData{
 		Faucet:                    faucet,
 		EpochLength:               int64(epochLength),
 		Actors:                    actorsList,
@@ -89,12 +89,12 @@ func CreateAndFundActors(
 // Create a new actor and register them in the node's account registry
 func createNewActor(numActors int, config *types.Config) *types.Actor {
 	actorName := types.GetActorName(numActors)
-	privKey, pubKey, address := GeneratePrivKey()
+	privKey, pubKey, address := common.GeneratePrivKey()
 
 	return &types.Actor{
 		Name: actorName,
 		Addr: address,
-		Params: &types.TransactionParams{
+		TxParams: &types.TransactionParams{
 			Config:   config,
 			Sequence: 0,
 			AccNum:   0,
@@ -161,12 +161,12 @@ func fundActors(
 			Outputs: outputs,
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(sender.Params, true, sendMsg)
+		_, updatedSeq, err := transaction.SendDataWithRetry(sender.TxParams, true, sendMsg)
 		if err != nil {
 			log.Printf("Error sending worker registration: %v", err.Error())
 			return err
 		}
-		sender.Params.Sequence = updatedSeq
+		sender.TxParams.Sequence = updatedSeq
 		count := completed.Add(int32(len(batch)))
 		if int(count)%1000 == 0 || count == int32(len(targets)) {
 			log.Printf("Processed %d/%d funding operations (%.2f%%)",
@@ -185,7 +185,7 @@ func getPreFundAmount(
 	faucet *types.Actor,
 	numActors int,
 ) (cosmosmath.Int, error) {
-	faucetBal, err := lib.GetAccountBalance(faucet.Addr, faucet.Params.Config)
+	faucetBal, err := lib.GetAccountBalance(faucet.Addr, faucet.TxParams.Config)
 	if err != nil {
 		return cosmosmath.ZeroInt(), err
 	}
@@ -204,7 +204,7 @@ func getPreFundAmount(
 func RegisterWorkers(
 	actors []*types.Actor,
 	topicId uint64,
-	data *simulation.SimulationData,
+	data *SimulationData,
 	numWorkers int,
 ) error {
 	maxConcurrent := 1000
@@ -242,12 +242,12 @@ func RegisterWorkers(
 				TopicId:   topicId,
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.Params, false, request)
+			_, updatedSeq, err := transaction.SendDataWithRetry(worker.TxParams, false, request)
 			if err != nil {
 				log.Printf("Error sending worker registration: %v", err.Error())
 				return
 			}
-			worker.Params.Sequence = updatedSeq
+			worker.TxParams.Sequence = updatedSeq
 			data.AddWorkerRegistration(topicId, worker)
 		}(worker, i)
 	}
@@ -261,7 +261,7 @@ func RegisterWorkers(
 func RegisterReputersAndStake(
 	actors []*types.Actor,
 	topicId uint64,
-	data *simulation.SimulationData,
+	data *SimulationData,
 	numReputers int,
 ) error {
 	maxConcurrent := 1000
@@ -304,12 +304,12 @@ func RegisterReputersAndStake(
 				Amount:  cosmosmath.NewIntFromUint64(stakeToAdd),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.Params, true, registerRequest, stakeRequest)
+			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, true, registerRequest, stakeRequest)
 			if err != nil {
 				log.Printf("Error sending reputer stake: %v", err.Error())
 				return
 			}
-			reputer.Params.Sequence = updatedSeq
+			reputer.TxParams.Sequence = updatedSeq
 
 			data.AddReputerRegistration(topicId, reputer)
 		}(reputer, i)

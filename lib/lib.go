@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	cosmosmath "cosmossdk.io/math"
+	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/client"
 	"github.com/allora-network/allora-simulator/types"
 )
@@ -153,4 +154,24 @@ func GetActiveWorkersForTopic(config *types.Config, topicId uint64, blockHeight 
 	}
 
 	return workers, nil
+}
+
+func GetNetworkInferencesAtBlock(config *types.Config, topicId uint64, blockHeight int64) (*emissionstypes.ValueBundle, error) {
+	resp, err := client.HTTPGet(fmt.Sprintf("%s/emissions/v6/network_inferences/%d/last_inference/%d",
+		config.Nodes.API,
+		topicId,
+		blockHeight))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get reputer values: %v", err)
+	}
+
+	var networkInferencesRes struct {
+		NetworkInferences *emissionstypes.ValueBundle `json:"network_inferences"`
+	}
+	err = json.Unmarshal(resp, &networkInferencesRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal network inferences result: %v", err)
+	}
+
+	return networkInferencesRes.NetworkInferences, nil
 }

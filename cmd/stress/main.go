@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/allora-network/allora-simulator/types"
-	"github.com/allora-network/allora-simulator/workloads/actors"
-	"github.com/allora-network/allora-simulator/workloads/topics"
+	"github.com/allora-network/allora-simulator/workloads/stress"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -36,7 +35,7 @@ func main() {
 	sdkConfig.Seal()
 
 	numActors := (config.WorkersPerTopic + config.ReputersPerTopic) * config.NumTopics
-	faucet, simulationData := actors.CreateAndFundActors(
+	faucet, simulationData := stress.CreateAndFundActors(
 		&config,
 		mnemonic,
 		numActors,
@@ -44,7 +43,7 @@ func main() {
 	)
 
 	// Create topics
-	topicIds, err := topics.CreateTopics(
+	topicIds, err := stress.CreateTopics(
 		faucet,
 		config.NumTopics,
 		config.EpochLength,
@@ -68,7 +67,7 @@ func main() {
 
 		time.Sleep(20 * time.Second)
 		log.Printf("Registering reputers and adding stake in  topic: %d", topicId)
-		err = actors.RegisterReputersAndStake(
+		err = stress.RegisterReputersAndStake(
 			reputers,
 			topicId,
 			simulationData,
@@ -79,7 +78,7 @@ func main() {
 		}
 		time.Sleep(20 * time.Second)
 		log.Printf("Registering workers in  topic: %d", topicId)
-		err = actors.RegisterWorkers(
+		err = stress.RegisterWorkers(
 			workers,
 			topicId,
 			simulationData,
@@ -91,7 +90,7 @@ func main() {
 		time.Sleep(20 * time.Second)
 	}
 
-	err = topics.FundTopics(
+	err = stress.FundTopics(
 		faucet,
 		topicIds,
 	)
@@ -99,7 +98,7 @@ func main() {
 		log.Fatalf("Error funding topics: %v", err)
 	}
 
-	err = actors.StartActorLoops(
+	err = stress.StartActorLoops(
 		simulationData,
 		&config,
 		topicIds,

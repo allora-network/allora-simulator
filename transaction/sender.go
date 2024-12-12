@@ -66,7 +66,7 @@ func SendDataWithRetry(
 		if resp != nil {
 			log.Printf("Transaction sent successfully: %v\n", resp.Hash.String())
 		}
-	
+
 		sequence++
 		return resp, sequence, nil
 	}

@@ -1,4 +1,4 @@
-package topics
+package stress
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ func CreateTopics(
 	log.Printf("Creating %d topics, same block: %t", numTopics, createTopicsSameBlock)
 
 	// Get Next Block Id
-	topicId, err := lib.GetNextTopicId(actor.Params.Config)
+	topicId, err := lib.GetNextTopicId(actor.TxParams.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get block height: %w", err)
 	}
@@ -63,11 +63,11 @@ func CreateTopics(
 			protoMsgs[i] = req
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, false, protoMsgs...)
+		_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, false, protoMsgs...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to broadcast create topic requests: %w", err)
 		}
-		actor.Params.Sequence = updatedSeq
+		actor.TxParams.Sequence = updatedSeq
 		log.Printf("Created topics: %v", topicIds)
 		return topicIds, nil
 
@@ -92,11 +92,11 @@ func CreateTopics(
 				ActiveReputerQuantile:    alloraMath.MustNewDecFromString("0.2"),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, true, request)
+			_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, request)
 			if err != nil {
 				return nil, fmt.Errorf("failed to broadcast create topic request %d: %w", i, err)
 			}
-			actor.Params.Sequence = updatedSeq
+			actor.TxParams.Sequence = updatedSeq
 
 			topicIds[i] = topicId
 			topicId++
@@ -132,11 +132,11 @@ func FundTopics(
 		protoMsgs[i] = req
 	}
 
-	_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, true, protoMsgs...)
+	_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, protoMsgs...)
 	if err != nil {
 		return fmt.Errorf("failed to broadcast fund topic requests: %w", err)
 	}
-	actor.Params.Sequence = updatedSeq
+	actor.TxParams.Sequence = updatedSeq
 
 	return nil
 }

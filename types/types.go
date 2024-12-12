@@ -3,19 +3,20 @@ package types
 import "strconv"
 
 type Config struct {
-	ChainID               string      `json:"chain_id"`
-	Denom                 string      `json:"denom"`
-	Prefix                string      `json:"prefix"`
-	GasPerByte            int64       `json:"gas_per_byte"`
-	BaseGas               int64       `json:"base_gas"`
-	EpochLength           int64       `json:"epoch_length"`
-	NumTopics             int         `json:"num_topics"`
-	WorkersPerTopic       int         `json:"workers_per_topic"`
-	ReputersPerTopic      int         `json:"reputers_per_topic"`
-	CreateTopicsSameBlock bool        `json:"create_topics_same_block"`
-	TimeoutMinutes        int64       `json:"timeout_minutes"`
-	Gas                   GasConfig   `json:"gas"`
-	Nodes                 NodesConfig `json:"nodes"`
+	ChainID               string         `json:"chain_id"`
+	Denom                 string         `json:"denom"`
+	Prefix                string         `json:"prefix"`
+	GasPerByte            int64          `json:"gas_per_byte"`
+	BaseGas               int64          `json:"base_gas"`
+	EpochLength           int64          `json:"epoch_length"`
+	NumTopics             int            `json:"num_topics"`
+	WorkersPerTopic       int            `json:"workers_per_topic"`
+	ReputersPerTopic      int            `json:"reputers_per_topic"`
+	CreateTopicsSameBlock bool           `json:"create_topics_same_block"`
+	TimeoutMinutes        int64          `json:"timeout_minutes"`
+	Gas                   GasConfig      `json:"gas"`
+	Nodes                 NodesConfig    `json:"nodes"`
+	Research              ResearchConfig `json:"research"`
 }
 
 type GasConfig struct {
@@ -58,9 +59,10 @@ type Pagination struct {
 }
 
 type Actor struct {
-	Name   string
-	Addr   string
-	Params *TransactionParams
+	Name           string
+	Addr           string
+	TxParams       *TransactionParams
+	ResearchParams *ResearchParams
 }
 
 func (a Actor) String() string {
@@ -115,4 +117,31 @@ type Inference struct {
 	Value       string `json:"value"`
 	ExtraData   []byte `json:"extra_data"`
 	Proof       string `json:"proof"`
+}
+
+// RESEARCH MODULE
+
+type ResearchConfig struct {
+	InitialPrice         float64 `json:"initial_price"`
+	Drift                float64 `json:"drift"`
+	Volatility           float64 `json:"volatility"`
+	BaseExperienceFactor float64 `json:"base_experience_factor"`
+	ExperienceGrowth     float64 `json:"experience_growth"`
+	OutperformValue      float64 `json:"outperform_value"`
+}
+
+type ResearchParams struct {
+	Volatility         float64
+	Error              float64
+	Bias               float64
+	BiasWithVolatility float64 // used by inferers
+	ContextSensitivity float64
+	Outperform         bool
+	LossFunction       string
+}
+
+type GroundTruthState struct {
+	CumulativeReturn float64
+	CurrentPrice     float64
+	LastReturn       float64
 }
