@@ -75,6 +75,9 @@ go mod tidy
             "active_inferer_quantile": "0.25",
             "active_forecaster_quantile": "0.25",
             "active_reputer_quantile": "0.25"
+        },
+        "global_params": {
+            "max_samples_to_scale_scores": 10
         }
     }
 }

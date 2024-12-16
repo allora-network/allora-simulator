@@ -47,6 +47,12 @@ func main() {
 	)
 	log.Printf("Successfully created and funded all actors")
 
+	// Configure chain global parameters
+	err = research.ConfigureChainParams(faucet, &config)
+	if err != nil {
+		log.Fatalf("Failed to configure chain parameters: %v", err)
+	}
+
 	log.Printf("Creating research topic...")
 	topicId, err := research.CreateAndFundResearchTopic(faucet, &config)
 	if err != nil {
