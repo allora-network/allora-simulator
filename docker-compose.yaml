@@ -1,7 +1,7 @@
 services:
   node:
     container_name: allora_single_node
-    image: "alloranetwork/allora-chain:v0.5.0"
+    image: "alloranetwork/allora-chain:v0.7.1"
     environment:
       - CHAIN_ID=localnet
       - MONIKER=validator

@@ -36,28 +36,24 @@ type LossObs struct {
 	Outperform  bool
 }
 
-// Add an inferer registration to the simulation data
 func (s *ResearchSimulationData) AddInfererRegistration(topicId uint64, actor *types.Actor) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.RegisteredInferersByTopic[topicId] = append(s.RegisteredInferersByTopic[topicId], actor)
 }
 
-// Add a forecaster registration to the simulation data
 func (s *ResearchSimulationData) AddForecasterRegistration(topicId uint64, actor *types.Actor) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.RegisteredForecastersByTopic[topicId] = append(s.RegisteredForecastersByTopic[topicId], actor)
 }
 
-// Add a reputer registration to the simulation data
 func (s *ResearchSimulationData) AddReputerRegistration(topicId uint64, actor *types.Actor) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.RegisteredReputersByTopic[topicId] = append(s.RegisteredReputersByTopic[topicId], actor)
 }
 
-// Get an actor object from an address
 func (s *ResearchSimulationData) GetActorFromAddr(addr string) (*types.Actor, bool) {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
@@ -69,25 +65,82 @@ func (s *ResearchSimulationData) GetActorFromAddr(addr string) (*types.Actor, bo
 	return nil, false
 }
 
-// Get all inferers for a topic
 func (s *ResearchSimulationData) GetInferersForTopic(topicId uint64) []*types.Actor {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.RegisteredInferersByTopic[topicId]
 }
 
-// Get all forecasters for a topic
 func (s *ResearchSimulationData) GetForecastersForTopic(topicId uint64) []*types.Actor {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.RegisteredForecastersByTopic[topicId]
 }
 
-// Get all reputers for a topic
 func (s *ResearchSimulationData) GetReputersForTopic(topicId uint64) []*types.Actor {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.RegisteredReputersByTopic[topicId]
+}
+
+func (s *ResearchSimulationData) GetInfererSimulatedValues(topicId uint64) map[string]*alloramath.Dec {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+	return s.InfererSimulatedValues[topicId]
+}
+
+func (s *ResearchSimulationData) GetInfererSimulatedValue(topicId uint64, addr string) *alloramath.Dec {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+	return s.InfererSimulatedValues[topicId][addr]
+}
+
+func (s *ResearchSimulationData) GetForecasterSimulatedValue(topicId uint64, addr string) []*emissionstypes.ForecastElement {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+	return s.ForecasterSimulatedValues[topicId][addr]
+}
+
+func (s *ResearchSimulationData) GetInfererOutperformer(topicId uint64) string {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+	return s.InfererOutperformers[topicId]
+}
+
+func (s *ResearchSimulationData) GetForecasterOutperformer(topicId uint64) string {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+	return s.ForecasterOutperformers[topicId]
+}
+
+func (s *ResearchSimulationData) SetInfererSimulatedValues(topicId uint64, values map[string]*alloramath.Dec) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+	s.InfererSimulatedValues[topicId] = values
+}
+
+func (s *ResearchSimulationData) SetForecasterSimulatedValues(topicId uint64, values map[string][]*emissionstypes.ForecastElement) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+	s.ForecasterSimulatedValues[topicId] = values
+}
+
+func (s *ResearchSimulationData) SetForecasterOutperformer(topicId uint64, forecasters []*types.Actor) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+
+	// Randomly select an outperformer
+	outperformer := rand.Intn(len(forecasters))
+	s.ForecasterOutperformers[topicId] = forecasters[outperformer].Addr
+}
+
+func (s *ResearchSimulationData) SetInfererOutperformer(topicId uint64, inferers []*types.Actor) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+
+	// Randomly select an outperformer
+	outperformer := rand.Intn(len(inferers))
+	s.InfererOutperformers[topicId] = inferers[outperformer].Addr
 }
 
 // Generate inferer simulated values for next epoch
@@ -159,64 +212,4 @@ func (s *ResearchSimulationData) GenerateForecasterSimulatedValuesForNextEpoch(
 		forecasterSimulatedValues[forecaster.Addr] = simulatedValue
 	}
 	s.ForecasterSimulatedValues[topicId] = forecasterSimulatedValues
-}
-
-func (s *ResearchSimulationData) GetInfererSimulatedValues(topicId uint64) map[string]*alloramath.Dec {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-	return s.InfererSimulatedValues[topicId]
-}
-
-func (s *ResearchSimulationData) GetInfererSimulatedValue(topicId uint64, addr string) *alloramath.Dec {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-	return s.InfererSimulatedValues[topicId][addr]
-}
-
-func (s *ResearchSimulationData) GetForecasterSimulatedValue(topicId uint64, addr string) []*emissionstypes.ForecastElement {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-	return s.ForecasterSimulatedValues[topicId][addr]
-}
-
-func (s *ResearchSimulationData) GetInfererOutperformer(topicId uint64) string {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-	return s.InfererOutperformers[topicId]
-}
-
-func (s *ResearchSimulationData) GetForecasterOutperformer(topicId uint64) string {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-	return s.ForecasterOutperformers[topicId]
-}
-
-func (s *ResearchSimulationData) SetInfererSimulatedValues(topicId uint64, values map[string]*alloramath.Dec) {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
-	s.InfererSimulatedValues[topicId] = values
-}
-
-func (s *ResearchSimulationData) SetForecasterSimulatedValues(topicId uint64, values map[string][]*emissionstypes.ForecastElement) {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
-	s.ForecasterSimulatedValues[topicId] = values
-}
-
-func (s *ResearchSimulationData) SetForecasterOutperformer(topicId uint64, forecasters []*types.Actor) {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
-
-	// Randomly select an outperformer
-	outperformer := rand.Intn(len(forecasters))
-	s.ForecasterOutperformers[topicId] = forecasters[outperformer].Addr
-}
-
-func (s *ResearchSimulationData) SetInfererOutperformer(topicId uint64, inferers []*types.Actor) {
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
-
-	// Randomly select an outperformer
-	outperformer := rand.Intn(len(inferers))
-	s.InfererOutperformers[topicId] = inferers[outperformer].Addr
 }

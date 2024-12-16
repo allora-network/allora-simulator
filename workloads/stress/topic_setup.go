@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
-	alloraMath "github.com/allora-network/allora-chain/math"
+	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/transaction"
@@ -45,14 +45,14 @@ func CreateTopics(
 				EpochLength:              epochLength,
 				GroundTruthLag:           epochLength,
 				WorkerSubmissionWindow:   10,
-				PNorm:                    alloraMath.NewDecFromInt64(3),
-				AlphaRegret:              alloraMath.MustNewDecFromString("0.1"),
+				PNorm:                    alloramath.NewDecFromInt64(3),
+				AlphaRegret:              alloramath.MustNewDecFromString("0.1"),
 				AllowNegative:            false,
-				Epsilon:                  alloraMath.MustNewDecFromString("0.01"),
-				MeritSortitionAlpha:      alloraMath.MustNewDecFromString("0.1"),
-				ActiveInfererQuantile:    alloraMath.MustNewDecFromString("0.25"),
-				ActiveForecasterQuantile: alloraMath.MustNewDecFromString("0.25"),
-				ActiveReputerQuantile:    alloraMath.MustNewDecFromString("0.25"),
+				Epsilon:                  alloramath.MustNewDecFromString("0.01"),
+				MeritSortitionAlpha:      alloramath.MustNewDecFromString("0.1"),
+				ActiveInfererQuantile:    alloramath.MustNewDecFromString("0.25"),
+				ActiveForecasterQuantile: alloramath.MustNewDecFromString("0.25"),
+				ActiveReputerQuantile:    alloramath.MustNewDecFromString("0.25"),
 			}
 			topicIds[i] = topicId
 			topicId++
@@ -82,14 +82,14 @@ func CreateTopics(
 				EpochLength:              epochLength,
 				GroundTruthLag:           epochLength,
 				WorkerSubmissionWindow:   10,
-				PNorm:                    alloraMath.NewDecFromInt64(3),
-				AlphaRegret:              alloraMath.MustNewDecFromString("0.1"),
+				PNorm:                    alloramath.NewDecFromInt64(3),
+				AlphaRegret:              alloramath.MustNewDecFromString("0.1"),
 				AllowNegative:            true,
-				Epsilon:                  alloraMath.MustNewDecFromString("0.01"),
-				MeritSortitionAlpha:      alloraMath.MustNewDecFromString("0.1"),
-				ActiveInfererQuantile:    alloraMath.MustNewDecFromString("0.2"),
-				ActiveForecasterQuantile: alloraMath.MustNewDecFromString("0.2"),
-				ActiveReputerQuantile:    alloraMath.MustNewDecFromString("0.2"),
+				Epsilon:                  alloramath.MustNewDecFromString("0.01"),
+				MeritSortitionAlpha:      alloramath.MustNewDecFromString("0.1"),
+				ActiveInfererQuantile:    alloramath.MustNewDecFromString("0.2"),
+				ActiveForecasterQuantile: alloramath.MustNewDecFromString("0.2"),
+				ActiveReputerQuantile:    alloramath.MustNewDecFromString("0.2"),
 			}
 
 			_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, request)
