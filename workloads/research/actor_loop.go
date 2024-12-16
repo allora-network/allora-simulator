@@ -21,7 +21,7 @@ func StartActorLoops(
 ) error {
 	log.Printf("Starting submission loop for %d topics", len(topicIds))
 
-	totalRoutines := len(topicIds) * 3 // 3 routines per topic (inferer + forecaster + reputer)
+	totalRoutines := len(topicIds) * 2 // 2 routines per topic (worker + reputer)
 	errChan := make(chan error, totalRoutines)
 
 	var wg sync.WaitGroup
@@ -95,7 +95,9 @@ func runWorkersProcess(
 		CurrentPrice:     config.Research.InitialPrice,
 		LastReturn:       0,
 	}
-
+	// Generate cold start epoch data
+	data.GenerateInfererSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
+	data.GenerateForecasterSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
 	for {
 		latestOpenInfererNonce, err := lib.GetLatestOpenWorkerNonceByTopicId(config, topicId) // TODO: Update this function name
 		if err != nil {
@@ -127,6 +129,10 @@ func runWorkersProcess(
 
 			log.Printf("Successfully built and committed inferer payload for topic: %d for %v inferers", topicId, len(inferers))
 			numberOfActiveEpochs++
+
+			// Generate inferer and forecaster values for the next epoch
+			data.GenerateInfererSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
+			data.GenerateForecasterSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
 		}
 		time.Sleep(4 * time.Second)
 	}
@@ -324,14 +330,14 @@ func createReputerValueBundle(
 	groundTruthState *types.GroundTruthState,
 ) (*emissionstypes.ReputerValueBundle, error) {
 
-	// Get network inferences
+	// Get Network Inferences
 	networkInferences, err := lib.GetNetworkInferencesAtBlock(config, topicId, reputerNonce)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get Losses
-	lossBundle, err := ComputeLossBundle(
+	// Get Reputer Losses
+	lossBundle, err := GetReputerOutput(
 		groundTruthState.CurrentPrice,
 		networkInferences,
 		reputer.ResearchParams.Error,

@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	cosmosmath "cosmossdk.io/math"
+	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/transaction"
@@ -82,6 +83,10 @@ func CreateAndFundActors(
 		RegisteredReputersByTopic:    map[uint64][]*types.Actor{},
 		FailOnErr:                    false,
 		Mu:                           sync.RWMutex{},
+		InfererSimulatedValues:       make(map[uint64]map[string]*alloramath.Dec),
+		InfererOutperformers:         make(map[uint64]string),
+		ForecasterSimulatedValues:    make(map[uint64]map[string][]*emissionstypes.ForecastElement),
+		ForecasterOutperformers:      make(map[uint64]string),
 	}
 
 	return faucet, &data
@@ -273,7 +278,6 @@ func RegisterReputersAndStake(
 	topicId uint64,
 	data *ResearchSimulationData,
 	numReputers int,
-	simulatedValues bool,
 ) error {
 	maxConcurrent := 1000
 	sem := make(chan struct{}, maxConcurrent)

@@ -120,6 +120,41 @@ type Inference struct {
 	Proof       string `json:"proof"`
 }
 
+type WorkerAttributedValue struct {
+	Worker string `json:"worker"`
+	Value  string `json:"value"`
+}
+
+type WithheldWorkerAttributedValue struct {
+	Worker string `json:"worker"`
+	Value  string `json:"value"`
+}
+
+type OneOutInfererForecasterValues struct {
+	Forecaster          string                          `json:"forecaster"`
+	OneOutInfererValues []WithheldWorkerAttributedValue `json:"one_out_inferer_values"`
+}
+
+type ValueBundle struct {
+	TopicId                       string                          `json:"topic_id"`
+	ReputerRequestNonce           *ReputerRequestNonce            `json:"reputer_request_nonce,omitempty"`
+	Reputer                       string                          `json:"reputer"`
+	ExtraData                     []byte                          `json:"extra_data"`
+	CombinedValue                 string                          `json:"combined_value"`
+	InfererValues                 []WorkerAttributedValue         `json:"inferer_values"`
+	ForecasterValues              []WorkerAttributedValue         `json:"forecaster_values"`
+	NaiveValue                    string                          `json:"naive_value"`
+	OneOutInfererValues           []WithheldWorkerAttributedValue `json:"one_out_inferer_values"`
+	OneOutForecasterValues        []WithheldWorkerAttributedValue `json:"one_out_forecaster_values"`
+	OneInForecasterValues         []WorkerAttributedValue         `json:"one_in_forecaster_values"`
+	OneOutInfererForecasterValues []OneOutInfererForecasterValues `json:"one_out_inferer_forecaster_values"`
+}
+
+// API-friendly version of ValueBundle
+type GetNetworkInferencesAtBlockResponse struct {
+	NetworkInferences *ValueBundle `json:"network_inferences"`
+}
+
 // RESEARCH MODULE
 
 type ResearchConfig struct {

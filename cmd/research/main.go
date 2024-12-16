@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	log.Printf("Starting research simulation...")
+
 	config := types.Config{}
 	data, err := os.ReadFile("config.json")
 	if err != nil {
@@ -36,19 +38,23 @@ func main() {
 
 	// Calculate total number of actors needed
 	totalActors := config.InferersPerTopic + config.ForecastersPerTopic + config.ReputersPerTopic
+	log.Printf("Creating and funding %d actors...", totalActors)
 	faucet, simulationData := research.CreateAndFundActors(
 		&config,
 		mnemonic,
 		totalActors,
 		config.Research.Topic.EpochLength,
 	)
+	log.Printf("Successfully created and funded all actors")
 
-	// Create research topic
+	log.Printf("Creating research topic...")
 	topicId, err := research.CreateAndFundResearchTopic(faucet, &config)
 	if err != nil {
 		log.Fatalf("Failed to create research topic: %v", err)
 	}
+	log.Printf("Successfully created research topic with ID: %d", topicId)
 
+	log.Printf("Dividing actors into their respective roles...")
 	// Divide actors into their roles
 	startIdx := 0
 	inferers := simulationData.Actors[startIdx : startIdx+config.InferersPerTopic]
@@ -58,23 +64,25 @@ func main() {
 	startIdx += config.ForecastersPerTopic
 
 	reputers := simulationData.Actors[startIdx : startIdx+config.ReputersPerTopic]
+	log.Printf("Actor roles assigned - Inferers: %d, Forecasters: %d, Reputers: %d",
+		len(inferers), len(forecasters), len(reputers))
 
 	// Register actors with delays between registrations
 	time.Sleep(20 * time.Second)
-	log.Printf("Registering reputers and adding stake for topic: %d", topicId)
+	log.Printf("Starting reputer registration process (%d reputers)...", len(reputers))
 	err = research.RegisterReputersAndStake(
 		reputers,
 		topicId,
 		simulationData,
 		config.ReputersPerTopic,
-		true,
 	)
 	if err != nil {
 		log.Fatalf("Error registering reputers: %v", err)
 	}
+	log.Printf("Successfully registered all reputers")
 
 	time.Sleep(20 * time.Second)
-	log.Printf("Registering inferers for topic: %d", topicId)
+	log.Printf("Starting inferer registration process (%d inferers)...", len(inferers))
 	err = research.RegisterWorkers(
 		inferers,
 		topicId,
@@ -85,9 +93,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error registering inferers: %v", err)
 	}
+	log.Printf("Successfully registered all inferers")
 
 	time.Sleep(20 * time.Second)
-	log.Printf("Registering forecasters for topic: %d", topicId)
+	log.Printf("Starting forecaster registration process (%d forecasters)...", len(forecasters))
 	err = research.RegisterWorkers(
 		forecasters,
 		topicId,
@@ -98,8 +107,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error registering forecasters: %v", err)
 	}
+	log.Printf("Successfully registered all forecasters")
 
 	// Start the simulation loops
+	log.Printf("Initiating actor simulation loops...")
 	err = research.StartActorLoops(
 		simulationData,
 		&config,
@@ -108,4 +119,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error starting actor loops: %v", err)
 	}
+	log.Printf("Simulation loops started successfully")
 }
