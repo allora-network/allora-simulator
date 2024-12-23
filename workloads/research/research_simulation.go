@@ -170,9 +170,6 @@ func (s *ResearchSimulationData) GenerateForecasterSimulatedValuesForNextEpoch(
 	numberOfActiveEpochs int64,
 	groundTruthState *types.GroundTruthState,
 ) {
-	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-
 	forecasters := s.GetForecastersForTopic(topicId)
 	s.SetForecasterOutperformer(topicId, forecasters)
 
@@ -211,5 +208,5 @@ func (s *ResearchSimulationData) GenerateForecasterSimulatedValuesForNextEpoch(
 		)
 		forecasterSimulatedValues[forecaster.Addr] = simulatedValue
 	}
-	s.ForecasterSimulatedValues[topicId] = forecasterSimulatedValues
+	s.SetForecasterSimulatedValues(topicId, forecasterSimulatedValues)
 }
