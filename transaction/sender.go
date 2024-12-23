@@ -64,7 +64,14 @@ func SendDataWithRetry(
 			continue
 		}
 		if resp != nil {
-			log.Printf("Transaction sent successfully: %v\n", resp.Hash.String())
+			if resp.Code != 0 {
+				log.Printf("Error on the broadcasted transaction: %v\n", resp.Log)
+				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
+				time.Sleep(delay)
+				continue
+			} else {
+				log.Printf("Transaction sent successfully: %v\n", resp.Hash.String())
+			}
 		}
 
 		sequence++

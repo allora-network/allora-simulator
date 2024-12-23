@@ -30,8 +30,6 @@ func StartActorLoops(
 	for _, topicId := range topicIds {
 		log.Printf("Starting submission loop for topic: %d", topicId)
 
-		// Initialize research simulation data for topic
-
 		// Start worker routine
 		go func(tid uint64) {
 			defer wg.Done()
@@ -186,7 +184,6 @@ func createAndSendInfererPayloads(
 	infererNonce int64,
 ) bool {
 	completed := atomic.Int32{}
-	start := time.Now()
 
 	log.Printf("Starting inferer payload creation for %d inferers in topic: %d", len(inferers), topicId)
 
@@ -195,12 +192,10 @@ func createAndSendInfererPayloads(
 			defer func() {
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(inferers)) {
-					elapsed := time.Since(start)
-					log.Printf("Processed %d/%d inferer payloads (%.2f%%) for topic: %d in %s",
+					log.Printf("Processed %d/%d inferer payloads (%.2f%%) for topic: %d",
 						count, len(inferers),
 						float64(count)/float64(len(inferers))*100,
-						topicId,
-						elapsed)
+						topicId)
 				}
 			}()
 
@@ -209,8 +204,7 @@ func createAndSendInfererPayloads(
 				log.Printf("Error creating inferer data bundle: %v", err.Error())
 				return
 			}
-
-			_, updatedSeq, err := transaction.SendDataWithRetry(inferer.TxParams, false, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(inferer.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           inferer.Addr,
 				WorkerDataBundle: infererData,
 			})
@@ -220,9 +214,6 @@ func createAndSendInfererPayloads(
 			inferer.TxParams.Sequence = updatedSeq
 		}(inferer)
 	}
-
-	totalTime := time.Since(start)
-	log.Printf("Total inferer payload creation time: %s", totalTime)
 
 	return false
 }
@@ -307,7 +298,7 @@ func createAndSendReputerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, false, &emissionstypes.InsertReputerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, true, &emissionstypes.InsertReputerPayloadRequest{
 				Sender:             reputer.Addr,
 				ReputerValueBundle: valueBundle,
 			})
@@ -384,7 +375,6 @@ func createAndSendForecasterPayloads(
 	forecasterNonce int64,
 ) bool {
 	completed := atomic.Int32{}
-	start := time.Now()
 
 	log.Printf("Starting forecaster payload creation for %d forecasters in topic: %d", len(forecasters), topicId)
 
@@ -393,12 +383,10 @@ func createAndSendForecasterPayloads(
 			defer func() {
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(forecasters)) {
-					elapsed := time.Since(start)
-					log.Printf("Processed %d/%d forecaster payloads (%.2f%%) for topic: %d in %s",
+					log.Printf("Processed %d/%d forecaster payloads (%.2f%%) for topic: %d",
 						count, len(forecasters),
 						float64(count)/float64(len(forecasters))*100,
-						topicId,
-						elapsed)
+						topicId)
 				}
 			}()
 
@@ -408,7 +396,7 @@ func createAndSendForecasterPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(forecaster.TxParams, false, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := transaction.SendDataWithRetry(forecaster.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           forecaster.Addr,
 				WorkerDataBundle: workerData,
 			})
@@ -418,9 +406,6 @@ func createAndSendForecasterPayloads(
 			forecaster.TxParams.Sequence = updatedSeq
 		}(forecaster)
 	}
-
-	totalTime := time.Since(start)
-	log.Printf("Total forecaster payload creation time: %s", totalTime)
 
 	return false
 }
