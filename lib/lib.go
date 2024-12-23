@@ -65,7 +65,7 @@ func GetAccountBalance(address string, config *types.Config) (cosmosmath.Int, er
 }
 
 func GetNextTopicId(config *types.Config) (uint64, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v6/next_topic_id")
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v7/next_topic_id")
 	if err != nil {
 		return 0, err
 	}
@@ -86,7 +86,7 @@ func GetNextTopicId(config *types.Config) (uint64, error) {
 
 // Get the latest open worker nonce for a topic
 func GetLatestOpenWorkerNonceByTopicId(config *types.Config, topicId uint64) (int64, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v6/unfulfilled_worker_nonces/" + strconv.FormatUint(topicId, 10))
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v7/unfulfilled_worker_nonces/" + strconv.FormatUint(topicId, 10))
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +112,7 @@ func GetLatestOpenWorkerNonceByTopicId(config *types.Config, topicId uint64) (in
 
 // Get the oldest reputer nonce for a topic
 func GetOldestReputerNonceByTopicId(config *types.Config, topicId uint64) (int64, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v6/unfulfilled_reputer_nonces/" + strconv.FormatUint(topicId, 10))
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v7/unfulfilled_reputer_nonces/" + strconv.FormatUint(topicId, 10))
 	if err != nil {
 		return 0, err
 	}
@@ -138,7 +138,7 @@ func GetOldestReputerNonceByTopicId(config *types.Config, topicId uint64) (int64
 
 // Get the active workers for a topic at a given block height to use for reputer payloads
 func GetActiveWorkersForTopic(config *types.Config, topicId uint64, blockHeight int64) ([]string, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v6/inferences/" + strconv.FormatUint(topicId, 10) + "/" + strconv.FormatInt(blockHeight, 10))
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v7/inferences/" + strconv.FormatUint(topicId, 10) + "/" + strconv.FormatInt(blockHeight, 10))
 	if err != nil {
 		return []string{}, err
 	}
@@ -158,7 +158,7 @@ func GetActiveWorkersForTopic(config *types.Config, topicId uint64, blockHeight 
 }
 
 func GetNetworkInferencesAtBlock(config *types.Config, topicId uint64, blockHeight int64) (*emissionstypes.ValueBundle, error) {
-	resp, err := client.HTTPGet(fmt.Sprintf("%s/emissions/v6/network_inferences/%d/last_inference/%d",
+	resp, err := client.HTTPGet(fmt.Sprintf("%s/emissions/v7/network_inferences/%d/last_inference/%d",
 		config.Nodes.API,
 		topicId,
 		blockHeight))
