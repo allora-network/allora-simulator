@@ -2,7 +2,7 @@ package research
 
 import (
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"sync"
 	"sync/atomic"
 
@@ -48,13 +48,13 @@ func CreateAndFundActors(
 	}
 	preFundAmount, err := getPreFundAmount(faucet, numActors)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Error getting pre fund amount")
 	}
 
 	// Update faucet account number
 	faucet.TxParams.Sequence, faucet.TxParams.AccNum, err = lib.GetAccountInfo(faucet.Addr, faucet.TxParams.Config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Error getting account info")
 	}
 
 	err = fundActors(
@@ -63,14 +63,14 @@ func CreateAndFundActors(
 		preFundAmount,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Error funding actors")
 	}
 
 	//Update account numbers
 	for _, actor := range actorsList {
 		actor.TxParams.Sequence, actor.TxParams.AccNum, err = lib.GetAccountInfo(actor.Addr, actor.TxParams.Config)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Msg("Error getting account info")
 		}
 	}
 
@@ -128,7 +128,7 @@ func fundActors(
 	batchSize := 2000
 	completed := atomic.Int32{}
 
-	log.Printf("Starting funding of %d actors", len(targets))
+	log.Info().Msgf("Starting funding of %d actors", len(targets))
 
 	for i := 0; i < len(targets); i += batchSize {
 		end := i + batchSize
@@ -169,13 +169,13 @@ func fundActors(
 
 		_, updatedSeq, err := transaction.SendDataWithRetry(sender.TxParams, true, sendMsg)
 		if err != nil {
-			log.Printf("Error sending worker registration: %v", err.Error())
+			log.Error().Msgf("Error sending worker registration: %v", err.Error())
 			return err
 		}
 		sender.TxParams.Sequence = updatedSeq
 		count := completed.Add(int32(len(batch)))
 		if int(count)%1000 == 0 || count == int32(len(targets)) {
-			log.Printf("Processed %d/%d funding operations (%.2f%%)",
+			log.Info().Msgf("Processed %d/%d funding operations (%.2f%%)",
 				count, len(targets),
 				float64(count)/float64(len(targets))*100,
 			)
@@ -219,7 +219,7 @@ func RegisterWorkers(
 	completed := atomic.Int32{}
 
 	var wg sync.WaitGroup
-	log.Printf("Starting registration of %d workers in topic: %d\n", numWorkers, topicId)
+	log.Info().Msgf("Starting registration of %d workers in topic: %d", numWorkers, topicId)
 
 	// Process all workers without batching
 	for i := 0; i < numWorkers; i++ {
@@ -234,7 +234,7 @@ func RegisterWorkers(
 				<-sem
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(numWorkers) {
-					log.Printf("Processed %d/%d worker registrations (%.2f%%) for topic: %d\n",
+					log.Info().Msgf("Processed %d/%d worker registrations (%.2f%%) for topic: %d",
 						count, numWorkers,
 						float64(count)/float64(numWorkers)*100,
 						topicId,
@@ -251,7 +251,7 @@ func RegisterWorkers(
 
 			_, updatedSeq, err := transaction.SendDataWithRetry(worker.TxParams, false, request)
 			if err != nil {
-				log.Printf("Error sending worker registration: %v", err.Error())
+				log.Error().Msgf("Error sending worker registration: %v", err.Error())
 				return
 			}
 			worker.TxParams.Sequence = updatedSeq
@@ -284,7 +284,7 @@ func RegisterReputersAndStake(
 	completed := atomic.Int32{}
 
 	var wg sync.WaitGroup
-	log.Printf("Starting registration of %d reputers in topic: %d\n", numReputers, topicId)
+	log.Info().Msgf("Starting registration of %d reputers in topic: %d", numReputers, topicId)
 
 	// Process all reputers without batching
 	for i := 0; i < numReputers; i++ {
@@ -299,7 +299,7 @@ func RegisterReputersAndStake(
 				<-sem
 				count := completed.Add(1)
 				if int(count)%100 == 0 || count == int32(numReputers) {
-					log.Printf("Processed %d/%d reputer registrations (%.2f%%) for topic: %d\n",
+					log.Info().Msgf("Processed %d/%d reputer registrations (%.2f%%) for topic: %d",
 						count, numReputers,
 						float64(count)/float64(numReputers)*100,
 						topicId,
@@ -321,7 +321,7 @@ func RegisterReputersAndStake(
 
 			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, true, registerRequest, stakeRequest)
 			if err != nil {
-				log.Printf("Error sending reputer stake: %v", err.Error())
+				log.Error().Msgf("Error sending reputer stake: %v", err.Error())
 				return
 			}
 			reputer.TxParams.Sequence = updatedSeq

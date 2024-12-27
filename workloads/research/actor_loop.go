@@ -3,7 +3,7 @@ package research
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,7 +19,7 @@ func StartActorLoops(
 	config *types.Config,
 	topicIds []uint64,
 ) error {
-	log.Printf("Starting submission loop for %d topics", len(topicIds))
+	log.Info().Msgf("Starting submission loop for %d topics", len(topicIds))
 
 	totalRoutines := len(topicIds) * 2 // 2 routines per topic (worker + reputer)
 	errChan := make(chan error, totalRoutines)
@@ -28,7 +28,7 @@ func StartActorLoops(
 	wg.Add(totalRoutines)
 
 	for _, topicId := range topicIds {
-		log.Printf("Starting submission loop for topic: %d", topicId)
+		log.Info().Msgf("Starting submission loop for topic: %d", topicId)
 
 		// Start worker routine
 		go func(tid uint64) {
@@ -37,7 +37,7 @@ func StartActorLoops(
 				select {
 				case errChan <- fmt.Errorf("worker routine failed for topic %d: %w", tid, err):
 				default:
-					log.Printf("Error channel full - worker error for topic %d: %v", tid, err)
+					log.Error().Msgf("Error channel full - worker error for topic %d: %v", tid, err)
 				}
 			}
 		}(topicId)
@@ -49,7 +49,7 @@ func StartActorLoops(
 				select {
 				case errChan <- fmt.Errorf("reputer routine failed for topic %d: %w", tid, err):
 				default:
-					log.Printf("Error channel full - reputer error for topic %d: %v", tid, err)
+					log.Error().Msgf("Error channel full - reputer error for topic %d: %v", tid, err)
 				}
 			}
 		}(topicId)
@@ -70,10 +70,10 @@ func StartActorLoops(
 		return nil
 	case <-func() <-chan time.Time {
 		if config.TimeoutMinutes == -1 {
-			log.Printf("Timeout is disabled")
+			log.Info().Msg("Timeout is disabled")
 			return make(<-chan time.Time)
 		}
-		log.Printf("Timeout is enabled: %d minutes", config.TimeoutMinutes)
+		log.Info().Msgf("Timeout is enabled: %d minutes", config.TimeoutMinutes)
 		return time.After(time.Duration(config.TimeoutMinutes) * time.Minute)
 	}():
 		return fmt.Errorf("simulation timed out after %d minutes", config.TimeoutMinutes)
@@ -101,31 +101,31 @@ func runWorkersProcess(
 		if err != nil {
 			return err
 		} else if latestOpenInfererNonce > latestNonceHeightActedUpon {
-			log.Printf("Inferer nonce opened for topic: %d at height: %d", topicId, latestOpenInfererNonce)
+			log.Info().Msgf("Inferer nonce opened for topic: %d at height: %d", topicId, latestOpenInfererNonce)
 			latestNonceHeightActedUpon = latestOpenInfererNonce
 
 			// Get all inferers for the topic
 			inferers := data.GetInferersForTopic(topicId)
 
-			log.Printf("Building and committing inferer payload for topic: %d", topicId)
+			log.Info().Msgf("Building and committing inferer payload for topic: %d", topicId)
 			wasError := createAndSendInfererPayloads(data, topicId, inferers, latestOpenInfererNonce)
 			if wasError {
-				log.Printf("Error building and committing inferer payload for topic: %d", topicId)
+				log.Error().Msgf("Error building and committing inferer payload for topic: %d", topicId)
 			}
 
 			// Get all forecasters for the topic
 			forecasters := data.GetForecastersForTopic(topicId)
 
-			log.Printf("Building and committing forecaster payload for topic: %d", topicId)
+			log.Info().Msgf("Building and committing forecaster payload for topic: %d", topicId)
 			wasError = createAndSendForecasterPayloads(data, topicId, forecasters, latestOpenInfererNonce)
 			if wasError {
-				log.Printf("Error building and committing forecaster payload for topic: %d", topicId)
+				log.Error().Msgf("Error building and committing forecaster payload for topic: %d", topicId)
 			}
 
 			// Update ground truth state
 			groundTruthState = GetNextGroundTruth(groundTruthState, config.Research.InitialPrice, config.Research.Drift, config.Research.Volatility)
 
-			log.Printf("Successfully built and committed inferer payload for topic: %d for %v inferers", topicId, len(inferers))
+			log.Info().Msgf("Successfully built and committed inferer payload for topic: %d for %v inferers", topicId, len(inferers))
 			numberOfActiveEpochs++
 
 			// Generate inferer and forecaster values for the next epoch
@@ -151,25 +151,25 @@ func runReputersProcess(
 	for {
 		latestOpenReputerNonce, err := lib.GetOldestReputerNonceByTopicId(config, topicId)
 		if err != nil {
-			log.Printf("Error getting latest open reputer nonce on topic - node availability issue?: %v", err)
+			log.Error().Msgf("Error getting latest open reputer nonce on topic - node availability issue?: %v", err)
 		} else {
 			if latestOpenReputerNonce > latestNonceHeightActedUpon {
-				log.Printf("Reputer nonce opened for topic: %d at height: %d", topicId, latestOpenReputerNonce)
+				log.Info().Msgf("Reputer nonce opened for topic: %d at height: %d", topicId, latestOpenReputerNonce)
 				latestNonceHeightActedUpon = latestOpenReputerNonce
 
 				// Get all reputers for the topic
 				reputers := data.GetReputersForTopic(topicId)
 
-				log.Printf("Building and committing reputer payload for topic: %d", topicId)
+				log.Info().Msgf("Building and committing reputer payload for topic: %d", topicId)
 				wasError := createAndSendReputerPayloads(config, topicId, reputers, latestOpenReputerNonce, groundTruthState)
 				if wasError {
-					log.Printf("Error building and committing reputer payload for topic: %d", topicId)
+					log.Error().Msgf("Error building and committing reputer payload for topic: %d", topicId)
 				}
 
 				// Update ground truth state
 				groundTruthState = GetNextGroundTruth(groundTruthState, config.Research.InitialPrice, config.Research.Drift, config.Research.Volatility)
 
-				log.Printf("Successfully built and committed reputer payload for topic: %d for %v reputers", topicId, len(reputers))
+				log.Info().Msgf("Successfully built and committed reputer payload for topic: %d for %v reputers", topicId, len(reputers))
 			}
 		}
 		time.Sleep(4 * time.Second)
@@ -185,14 +185,14 @@ func createAndSendInfererPayloads(
 ) bool {
 	completed := atomic.Int32{}
 
-	log.Printf("Starting inferer payload creation for %d inferers in topic: %d", len(inferers), topicId)
+	log.Info().Msgf("Starting inferer payload creation for %d inferers in topic: %d", len(inferers), topicId)
 
 	for _, inferer := range inferers {
 		go func(inferer *types.Actor) {
 			defer func() {
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(inferers)) {
-					log.Printf("Processed %d/%d inferer payloads (%.2f%%) for topic: %d",
+					log.Info().Msgf("Processed %d/%d inferer payloads (%.2f%%) for topic: %d",
 						count, len(inferers),
 						float64(count)/float64(len(inferers))*100,
 						topicId)
@@ -201,7 +201,7 @@ func createAndSendInfererPayloads(
 
 			infererData, err := createInfererDataBundle(data, topicId, infererNonce, inferer)
 			if err != nil {
-				log.Printf("Error creating inferer data bundle: %v", err.Error())
+				log.Error().Msgf("Error creating inferer data bundle: %v", err.Error())
 				return
 			}
 			_, updatedSeq, err := transaction.SendDataWithRetry(inferer.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
@@ -209,7 +209,7 @@ func createAndSendInfererPayloads(
 				WorkerDataBundle: infererData,
 			})
 			if err != nil {
-				log.Printf("Error sending inferer payload: %v", err.Error())
+				log.Error().Msgf("Error sending inferer payload: %v", err.Error())
 			}
 			inferer.TxParams.Sequence = updatedSeq
 		}(inferer)
@@ -277,14 +277,14 @@ func createAndSendReputerPayloads(
 ) bool {
 	completed := atomic.Int32{}
 
-	log.Printf("Starting reputer payload creation for %d reputers in topic: %d", len(reputers), topicId)
+	log.Info().Msgf("Starting reputer payload creation for %d reputers in topic: %d", len(reputers), topicId)
 
 	for _, reputer := range reputers {
 		go func(reputer *types.Actor) {
 			defer func() {
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(reputers)) {
-					log.Printf("Processed %d/%d reputer payloads (%.2f%%) for topic: %d",
+					log.Info().Msgf("Processed %d/%d reputer payloads (%.2f%%) for topic: %d",
 						count, len(reputers),
 						float64(count)/float64(len(reputers))*100,
 						topicId,
@@ -294,7 +294,7 @@ func createAndSendReputerPayloads(
 
 			valueBundle, err := createReputerValueBundle(config, topicId, reputer, reputerNonce, groundTruthState)
 			if err != nil {
-				log.Printf("Error creating reputer value bundle: %v", err.Error())
+				log.Error().Msgf("Error creating reputer value bundle: %v", err.Error())
 				return
 			}
 
@@ -303,7 +303,7 @@ func createAndSendReputerPayloads(
 				ReputerValueBundle: valueBundle,
 			})
 			if err != nil {
-				log.Printf("Error sending reputer payload: %v", err.Error())
+				log.Error().Msgf("Error sending reputer payload: %v", err.Error())
 			}
 			reputer.TxParams.Sequence = updatedSeq
 		}(reputer)
@@ -376,14 +376,14 @@ func createAndSendForecasterPayloads(
 ) bool {
 	completed := atomic.Int32{}
 
-	log.Printf("Starting forecaster payload creation for %d forecasters in topic: %d", len(forecasters), topicId)
+	log.Info().Msgf("Starting forecaster payload creation for %d forecasters in topic: %d", len(forecasters), topicId)
 
 	for _, forecaster := range forecasters {
 		go func(forecaster *types.Actor) {
 			defer func() {
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(forecasters)) {
-					log.Printf("Processed %d/%d forecaster payloads (%.2f%%) for topic: %d",
+					log.Info().Msgf("Processed %d/%d forecaster payloads (%.2f%%) for topic: %d",
 						count, len(forecasters),
 						float64(count)/float64(len(forecasters))*100,
 						topicId)
@@ -392,7 +392,7 @@ func createAndSendForecasterPayloads(
 
 			workerData, err := createForecasterDataBundle(data, topicId, forecasterNonce, forecaster)
 			if err != nil {
-				log.Printf("Error creating forecaster data bundle: %v", err.Error())
+				log.Error().Msgf("Error creating forecaster data bundle: %v", err.Error())
 				return
 			}
 
@@ -401,7 +401,7 @@ func createAndSendForecasterPayloads(
 				WorkerDataBundle: workerData,
 			})
 			if err != nil {
-				log.Printf("Error sending forecaster payload: %v", err.Error())
+				log.Error().Msgf("Error sending forecaster payload: %v", err.Error())
 			}
 			forecaster.TxParams.Sequence = updatedSeq
 		}(forecaster)

@@ -3,7 +3,6 @@ package stress
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -14,6 +13,7 @@ import (
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/transaction"
 	"github.com/allora-network/allora-simulator/types"
+	"github.com/rs/zerolog/log"
 )
 
 func StartActorLoops(
@@ -21,7 +21,7 @@ func StartActorLoops(
 	config *types.Config,
 	topicIds []uint64,
 ) error {
-	log.Printf("Starting submission loop for %d topics", len(topicIds))
+	log.Info().Msgf("Starting submission loop for %d topics", len(topicIds))
 
 	totalRoutines := len(topicIds) * 2 // 2 routines per topic (worker + reputer)
 	errChan := make(chan error, totalRoutines)
@@ -32,7 +32,7 @@ func StartActorLoops(
 
 	// For each topic, start a worker routine and a reputer routine
 	for _, topicId := range topicIds {
-		log.Printf("Starting submission loop for topic: %d", topicId)
+		log.Info().Msgf("Starting submission loop for topic: %d", topicId)
 		// Start worker routine
 		go func(tid uint64) {
 			defer wg.Done()
@@ -40,7 +40,7 @@ func StartActorLoops(
 				select {
 				case errChan <- fmt.Errorf("worker routine failed for topic %d: %w", tid, err):
 				default: // Don't block if channel is full
-					log.Printf("Error channel full - worker error for topic %d: %v", tid, err)
+					log.Error().Err(err).Msgf("Error channel full - worker error for topic %d: %v", tid, err)
 				}
 			}
 		}(topicId)
@@ -52,7 +52,7 @@ func StartActorLoops(
 				select {
 				case errChan <- fmt.Errorf("reputer routine failed for topic %d: %w", tid, err):
 				default: // Don't block if channel is full
-					log.Printf("Error channel full - reputer error for topic %d: %v", tid, err)
+					log.Error().Err(err).Msgf("Error channel full - reputer error for topic %d: %v", tid, err)
 				}
 			}
 		}(topicId)
@@ -73,10 +73,10 @@ func StartActorLoops(
 		return nil
 	case <-func() <-chan time.Time {
 		if config.TimeoutMinutes == -1 {
-			log.Printf("Timeout is disabled")
+			log.Info().Msg("Timeout is disabled")
 			return make(<-chan time.Time)
 		}
-		log.Printf("Timeout is enabled: %d minutes", config.TimeoutMinutes)
+		log.Info().Msgf("Timeout is enabled: %d minutes", config.TimeoutMinutes)
 		return time.After(time.Duration(config.TimeoutMinutes) * time.Minute)
 	}():
 		return fmt.Errorf("simulation timed out after %d minutes", config.TimeoutMinutes)
@@ -96,7 +96,7 @@ func runTopicWorkersLoop(
 			return err
 		} else {
 			if latestOpenWorkerNonce > latestNonceHeightActedUpon {
-				log.Printf("Worker nonce opened for topic: %d at height: %d", topicId, latestOpenWorkerNonce)
+				log.Info().Msgf("Worker nonce opened for topic: %d at height: %d", topicId, latestOpenWorkerNonce)
 				// previousActiveSetNonce will be used to get the active set of workers from previous epoch for the forecasts
 				previousActiveSetNonce := latestNonceHeightActedUpon
 				latestNonceHeightActedUpon = latestOpenWorkerNonce
@@ -110,12 +110,12 @@ func runTopicWorkersLoop(
 					return err
 				}
 
-				log.Printf("Building and committing worker payload for topic: %d", topicId)
+				log.Info().Msgf("Building and committing worker payload for topic: %d", topicId)
 				wasError := createAndSendWorkerPayloads(topicId, workers, latestOpenWorkerNonce, previousActiveWorkersAddresses)
 				if wasError {
-					log.Printf("Error building and committing worker payload for topic: %d", topicId)
+					log.Error().Err(err).Msgf("Error building and committing worker payload for topic: %d", topicId)
 				}
-				log.Printf("Successfully built and committed worker payload for topic: %d for %v workers", topicId, len(workers))
+				log.Info().Msgf("Successfully built and committed worker payload for topic: %d for %v workers", topicId, len(workers))
 			}
 		}
 		time.Sleep(4 * time.Second)
@@ -132,10 +132,10 @@ func runReputersProcess(
 	for {
 		latestOpenReputerNonce, err := lib.GetOldestReputerNonceByTopicId(config, topicId)
 		if err != nil {
-			log.Printf("Error getting latest open reputer nonce on topic - node availability issue?: %v", err)
+			log.Info().Msgf("Error getting latest open reputer nonce on topic - node availability issue?: %v", err)
 		} else {
 			if latestOpenReputerNonce > latestNonceHeightActedUpon {
-				log.Printf("Reputer nonce opened for topic: %d at height: %d", topicId, latestOpenReputerNonce)
+				log.Info().Msgf("Reputer nonce opened for topic: %d at height: %d", topicId, latestOpenReputerNonce)
 				latestNonceHeightActedUpon = latestOpenReputerNonce
 
 				// Get all reputers for the topic
@@ -147,12 +147,12 @@ func runReputersProcess(
 					return err
 				}
 
-				log.Printf("Building and committing reputer payload for topic: %d", topicId)
+				log.Info().Msgf("Building and committing reputer payload for topic: %d", topicId)
 				wasError := createAndSendReputerPayloads(topicId, reputers, activeWorkersAddresses, latestOpenReputerNonce)
 				if wasError {
-					log.Printf("Error building and committing reputer payload for topic: %d", topicId)
+					log.Error().Msgf("Error building and committing reputer payload for topic: %d", topicId)
 				}
-				log.Printf("Successfully built and committed reputer payload for topic: %d for %v reputers", topicId, len(reputers))
+				log.Info().Msgf("Successfully built and committed reputer payload for topic: %d for %v reputers", topicId, len(reputers))
 			}
 		}
 		time.Sleep(4 * time.Second)
@@ -169,7 +169,7 @@ func createAndSendWorkerPayloads(
 	completed := atomic.Int32{}
 	start := time.Now()
 
-	log.Printf("Starting worker payload creation for %d workers in topic: %d", len(workers), topicId)
+	log.Info().Msgf("Starting worker payload creation for %d workers in topic: %d", len(workers), topicId)
 
 	for _, worker := range workers {
 		go func(worker *types.Actor) {
@@ -177,7 +177,7 @@ func createAndSendWorkerPayloads(
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(workers)) {
 					elapsed := time.Since(start)
-					log.Printf("Processed %d/%d worker payloads (%.2f%%) for topic: %d in %s",
+					log.Info().Msgf("Processed %d/%d worker payloads (%.2f%%) for topic: %d in %s",
 						count, len(workers),
 						float64(count)/float64(len(workers))*100,
 						topicId,
@@ -187,7 +187,7 @@ func createAndSendWorkerPayloads(
 
 			workerData, err := createWorkerDataBundle(topicId, workerNonce, worker, previousActiveInferersAddresses)
 			if err != nil {
-				log.Printf("Error creating worker data bundle: %v", err.Error())
+				log.Error().Msgf("Error creating worker data bundle: %v", err.Error())
 				return
 			}
 
@@ -196,14 +196,14 @@ func createAndSendWorkerPayloads(
 				WorkerDataBundle: workerData,
 			})
 			if err != nil {
-				log.Printf("Error sending worker payload: %v", err.Error())
+				log.Error().Msgf("Error sending worker payload: %v", err.Error())
 			}
 			worker.TxParams.Sequence = updatedSeq
 		}(worker)
 	}
 
 	totalTime := time.Since(start)
-	log.Printf("Total worker payload creation time: %s", totalTime)
+	log.Info().Msgf("Total worker payload creation time: %s", totalTime)
 
 	return false
 }
@@ -285,14 +285,14 @@ func createAndSendReputerPayloads(
 		BlockHeight: workerNonce,
 	}
 
-	log.Printf("Starting reputer payload creation for %d reputers in topic: %d", len(reputers), topicId)
+	log.Info().Msgf("Starting reputer payload creation for %d reputers in topic: %d", len(reputers), topicId)
 
 	for _, reputer := range reputers {
 		go func(reputer *types.Actor) {
 			defer func() {
 				count := completed.Add(1)
 				if int(count)%1000 == 0 || count == int32(len(reputers)) {
-					log.Printf("Processed %d/%d reputer payloads (%.2f%%) for topic: %d",
+					log.Info().Msgf("Processed %d/%d reputer payloads (%.2f%%) for topic: %d",
 						count, len(reputers),
 						float64(count)/float64(len(reputers))*100,
 						topicId,
@@ -302,7 +302,7 @@ func createAndSendReputerPayloads(
 
 			valueBundle, err := createReputerValueBundle(topicId, reputer, workers, reputerNonce)
 			if err != nil {
-				log.Printf("Error creating reputer value bundle: %v", err.Error())
+				log.Error().Err(err).Msgf("Error creating reputer value bundle: %v", err.Error())
 				return
 			}
 
@@ -311,7 +311,7 @@ func createAndSendReputerPayloads(
 				ReputerValueBundle: valueBundle,
 			})
 			if err != nil {
-				log.Printf("Error sending reputer payload: %v", err.Error())
+				log.Error().Err(err).Msgf("Error sending reputer payload: %v", err.Error())
 			}
 			reputer.TxParams.Sequence = updatedSeq
 		}(reputer)

@@ -2,9 +2,10 @@ package stress
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"cosmossdk.io/math"
 	alloramath "github.com/allora-network/allora-chain/math"
@@ -24,7 +25,7 @@ func CreateTopics(
 	epochLength int64,
 	createTopicsSameBlock bool,
 ) ([]uint64, error) {
-	log.Printf("Creating %d topics, same block: %t", numTopics, createTopicsSameBlock)
+	log.Info().Msgf("Creating %d topics, same block: %t", numTopics, createTopicsSameBlock)
 
 	// Get Next Block Id
 	topicId, err := lib.GetNextTopicId(actor.TxParams.Config)
@@ -68,7 +69,7 @@ func CreateTopics(
 			return nil, fmt.Errorf("failed to broadcast create topic requests: %w", err)
 		}
 		actor.TxParams.Sequence = updatedSeq
-		log.Printf("Created topics: %v", topicIds)
+		log.Info().Msgf("Created topics: %v", topicIds)
 		return topicIds, nil
 
 	} else {
@@ -107,7 +108,7 @@ func CreateTopics(
 			time.Sleep(time.Duration(waitTime) * time.Second)
 		}
 
-		log.Printf("Created topics: %v", topicIds)
+		log.Info().Msgf("Created topics: %v", topicIds)
 		return topicIds, nil
 	}
 }
@@ -124,7 +125,7 @@ func FundTopics(
 			TopicId: topicId,
 			Amount:  math.NewInt(topicFunds),
 		}
-		log.Printf("Funding topic: %d with amount: %d from: %s", topicId, topicFunds, actor.Addr)
+		log.Info().Msgf("Funding topic: %d with amount: %d from: %s", topicId, topicFunds, actor.Addr)
 	}
 
 	protoMsgs := make([]proto.Message, len(requests))

@@ -2,7 +2,8 @@ package research
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/rs/zerolog/log"
 
 	"cosmossdk.io/math"
 	alloramath "github.com/allora-network/allora-chain/math"
@@ -62,6 +63,6 @@ func CreateAndFundResearchTopic(
 	}
 	actor.TxParams.Sequence = updatedSeq
 
-	log.Printf("Created and funded topic: %d", topicId)
+	log.Info().Msgf("Created and funded topic: %d", topicId)
 	return topicId, nil
 }

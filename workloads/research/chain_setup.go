@@ -2,7 +2,8 @@ package research
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/rs/zerolog/log"
 
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/transaction"
@@ -11,7 +12,7 @@ import (
 
 // ConfigureChainParams sets up the chain parameters for research simulation
 func ConfigureChainParams(actor *types.Actor, config *types.Config) error {
-	log.Printf("Configuring chain parameters for research simulation")
+	log.Info().Msgf("Configuring chain parameters for research simulation")
 
 	updateParamRequest := &emissionstypes.UpdateParamsRequest{
 		Sender: actor.Addr,
@@ -26,6 +27,6 @@ func ConfigureChainParams(actor *types.Actor, config *types.Config) error {
 	}
 	actor.TxParams.Sequence = updatedSeq
 
-	log.Printf("Successfully configured chain parameters")
+	log.Info().Msgf("Successfully configured chain parameters")
 	return nil
 }
