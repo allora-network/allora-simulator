@@ -226,7 +226,7 @@ func createInfererDataBundle(
 	inferer *types.Actor,
 ) (*emissionstypes.WorkerDataBundle, error) {
 	// Get inferer simulated value
-	infererSimulatedValue := data.InfererSimulatedValues[topicId][inferer.Addr]
+	infererSimulatedValue := data.GetInfererSimulatedValue(topicId, inferer.Addr)
 
 	infererDataBundle := &emissionstypes.WorkerDataBundle{
 		Worker: inferer.Addr,
@@ -418,7 +418,7 @@ func createForecasterDataBundle(
 	forecaster *types.Actor,
 ) (*emissionstypes.WorkerDataBundle, error) {
 	// Get forecaster simulated values
-	forecasterSimulatedValues := data.ForecasterSimulatedValues[topicId][forecaster.Addr]
+	forecasterSimulatedValues := data.GetForecasterSimulatedValue(topicId, forecaster.Addr)
 
 	workerDataBundle := &emissionstypes.WorkerDataBundle{
 		Worker: forecaster.Addr,
