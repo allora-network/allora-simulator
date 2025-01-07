@@ -21,9 +21,9 @@
       "grpc": "localhost:9090"
     },
     "research": {
-      "initial_price": 100.0,
-      "drift": 0.0001,
-      "volatility": 0.02,
+      "initial_price": 1,
+      "drift": 0.01,
+      "volatility": 0.1,
       "base_experience_factor": 0.5,
       "experience_growth": 0.1,
       "outperform_value": 0.5,
