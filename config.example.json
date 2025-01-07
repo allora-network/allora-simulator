@@ -1,5 +1,5 @@
 {
-    "chain_id": "demo",
+    "chain_id": "localnet",
     "denom": "uallo",
     "prefix": "allo",
     "gas_per_byte": 100,

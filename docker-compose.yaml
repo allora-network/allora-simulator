@@ -1,7 +1,7 @@
 services:
   node:
     container_name: allora_single_node
-    image: "alloranetwork/allora-chain:v0.7.1"
+    image: "alloranetwork/allora-chain:v0.8.1"
     environment:
       - CHAIN_ID=localnet
       - MONIKER=validator
@@ -50,7 +50,7 @@ services:
       - app-network
 
   indexer:
-    image: alloranetwork/allora-indexer:v0.4.0
+    image: alloranetwork/allora-indexer:v0.9.2
     platform: linux/amd64
     depends_on:
       db:

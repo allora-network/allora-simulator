@@ -87,6 +87,8 @@ echo "Starting validator node without cosmovisor"
 allorad \
     --home=${APP_HOME} \
     start \
+    --api.enable \
+    --api.address=tcp://0.0.0.0:1317 \
     --moniker=${MONIKER} \
     --minimum-gas-prices=0${DENOM} \
     --rpc.laddr=tcp://0.0.0.0:26657
