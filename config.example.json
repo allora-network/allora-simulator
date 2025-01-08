@@ -13,7 +13,7 @@
     "timeout_minutes": 30,
     "gas": {
       "low": 25,
-      "precision": 3
+      "precision": 1
     },
     "nodes": {
       "rpc": ["http://127.0.0.1:26657"],

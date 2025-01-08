@@ -37,7 +37,7 @@ services:
       retries: 5
 
   indexer-init:
-    image: alloranetwork/allora-indexer:v0.4.0
+    image: alloranetwork/allora-indexer:v0.9.4
     depends_on:
       db:
         condition: service_healthy
@@ -46,11 +46,12 @@ services:
     command:
       - --MODE=empty
       - --CONNECTION=${CONNECTION}
+      - --CHAIN_ID=localnet
     networks:
       - app-network
 
   indexer:
-    image: alloranetwork/allora-indexer:v0.9.2
+    image: alloranetwork/allora-indexer:v0.9.4
     platform: linux/amd64
     depends_on:
       db:
@@ -65,9 +66,10 @@ services:
       - --WORKERS_NUM=${WORKERS_NUM:-1}
       - --NODE=${NODE:-http://allora_single_node:26657}
       - --CONNECTION=${CONNECTION}
-      - --MODE=${MODE:-sync}
+      - --MODE=full
       - --BOOTSTRAP_BLOCKHEIGHT=${BOOTSTRAP_BLOCKHEIGHT:-1}
       - --MAX_CONCURRENT_TX_PROCESSING=${MAX_CONCURRENT_TX_PROCESSING:-100}
+      - --CHAIN_ID=localnet
     networks:
       - app-network
 
