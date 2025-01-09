@@ -1,13 +1,14 @@
-package topics
+package stress
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"cosmossdk.io/math"
-	alloraMath "github.com/allora-network/allora-chain/math"
+	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/transaction"
@@ -24,10 +25,10 @@ func CreateTopics(
 	epochLength int64,
 	createTopicsSameBlock bool,
 ) ([]uint64, error) {
-	log.Printf("Creating %d topics, same block: %t", numTopics, createTopicsSameBlock)
+	log.Info().Msgf("Creating %d topics, same block: %t", numTopics, createTopicsSameBlock)
 
 	// Get Next Block Id
-	topicId, err := lib.GetNextTopicId(actor.Params.Config)
+	topicId, err := lib.GetNextTopicId(actor.TxParams.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get block height: %w", err)
 	}
@@ -45,14 +46,14 @@ func CreateTopics(
 				EpochLength:              epochLength,
 				GroundTruthLag:           epochLength,
 				WorkerSubmissionWindow:   10,
-				PNorm:                    alloraMath.NewDecFromInt64(3),
-				AlphaRegret:              alloraMath.MustNewDecFromString("0.1"),
+				PNorm:                    alloramath.NewDecFromInt64(3),
+				AlphaRegret:              alloramath.MustNewDecFromString("0.1"),
 				AllowNegative:            false,
-				Epsilon:                  alloraMath.MustNewDecFromString("0.01"),
-				MeritSortitionAlpha:      alloraMath.MustNewDecFromString("0.1"),
-				ActiveInfererQuantile:    alloraMath.MustNewDecFromString("0.25"),
-				ActiveForecasterQuantile: alloraMath.MustNewDecFromString("0.25"),
-				ActiveReputerQuantile:    alloraMath.MustNewDecFromString("0.25"),
+				Epsilon:                  alloramath.MustNewDecFromString("0.01"),
+				MeritSortitionAlpha:      alloramath.MustNewDecFromString("0.1"),
+				ActiveInfererQuantile:    alloramath.MustNewDecFromString("0.25"),
+				ActiveForecasterQuantile: alloramath.MustNewDecFromString("0.25"),
+				ActiveReputerQuantile:    alloramath.MustNewDecFromString("0.25"),
 			}
 			topicIds[i] = topicId
 			topicId++
@@ -63,12 +64,12 @@ func CreateTopics(
 			protoMsgs[i] = req
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, false, protoMsgs...)
+		_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, false, protoMsgs...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to broadcast create topic requests: %w", err)
 		}
-		actor.Params.Sequence = updatedSeq
-		log.Printf("Created topics: %v", topicIds)
+		actor.TxParams.Sequence = updatedSeq
+		log.Info().Msgf("Created topics: %v", topicIds)
 		return topicIds, nil
 
 	} else {
@@ -82,21 +83,21 @@ func CreateTopics(
 				EpochLength:              epochLength,
 				GroundTruthLag:           epochLength,
 				WorkerSubmissionWindow:   10,
-				PNorm:                    alloraMath.NewDecFromInt64(3),
-				AlphaRegret:              alloraMath.MustNewDecFromString("0.1"),
+				PNorm:                    alloramath.NewDecFromInt64(3),
+				AlphaRegret:              alloramath.MustNewDecFromString("0.1"),
 				AllowNegative:            true,
-				Epsilon:                  alloraMath.MustNewDecFromString("0.01"),
-				MeritSortitionAlpha:      alloraMath.MustNewDecFromString("0.1"),
-				ActiveInfererQuantile:    alloraMath.MustNewDecFromString("0.2"),
-				ActiveForecasterQuantile: alloraMath.MustNewDecFromString("0.2"),
-				ActiveReputerQuantile:    alloraMath.MustNewDecFromString("0.2"),
+				Epsilon:                  alloramath.MustNewDecFromString("0.01"),
+				MeritSortitionAlpha:      alloramath.MustNewDecFromString("0.1"),
+				ActiveInfererQuantile:    alloramath.MustNewDecFromString("0.2"),
+				ActiveForecasterQuantile: alloramath.MustNewDecFromString("0.2"),
+				ActiveReputerQuantile:    alloramath.MustNewDecFromString("0.2"),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, true, request)
+			_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, request)
 			if err != nil {
 				return nil, fmt.Errorf("failed to broadcast create topic request %d: %w", i, err)
 			}
-			actor.Params.Sequence = updatedSeq
+			actor.TxParams.Sequence = updatedSeq
 
 			topicIds[i] = topicId
 			topicId++
@@ -107,7 +108,7 @@ func CreateTopics(
 			time.Sleep(time.Duration(waitTime) * time.Second)
 		}
 
-		log.Printf("Created topics: %v", topicIds)
+		log.Info().Msgf("Created topics: %v", topicIds)
 		return topicIds, nil
 	}
 }
@@ -124,7 +125,7 @@ func FundTopics(
 			TopicId: topicId,
 			Amount:  math.NewInt(topicFunds),
 		}
-		log.Printf("Funding topic: %d with amount: %d from: %s", topicId, topicFunds, actor.Addr)
+		log.Info().Msgf("Funding topic: %d with amount: %d from: %s", topicId, topicFunds, actor.Addr)
 	}
 
 	protoMsgs := make([]proto.Message, len(requests))
@@ -132,11 +133,11 @@ func FundTopics(
 		protoMsgs[i] = req
 	}
 
-	_, updatedSeq, err := transaction.SendDataWithRetry(actor.Params, true, protoMsgs...)
+	_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, protoMsgs...)
 	if err != nil {
 		return fmt.Errorf("failed to broadcast fund topic requests: %w", err)
 	}
-	actor.Params.Sequence = updatedSeq
+	actor.TxParams.Sequence = updatedSeq
 
 	return nil
 }

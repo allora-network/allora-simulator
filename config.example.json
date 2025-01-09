@@ -1,23 +1,48 @@
 {
-    "chain_id": "demo",
+    "chain_id": "localnet",
     "denom": "uallo",
     "prefix": "allo",
     "gas_per_byte": 100,
-    "base_gas": 2000000,
+    "base_gas": 1000000000,
     "epoch_length": 12,
     "num_topics": 1,
-    "workers_per_topic": 5,
+    "inferers_per_topic": 5,
+    "forecasters_per_topic": 3,
     "reputers_per_topic": 3,
     "create_topics_same_block": false,
-    "simulated_values": false,
     "timeout_minutes": 30,
     "gas": {
       "low": 25,
-      "precision": 3
+      "precision": 1
     },
     "nodes": {
       "rpc": ["http://127.0.0.1:26657"],
       "api": "http://localhost:1317",
       "grpc": "localhost:9090"
+    },
+    "research": {
+      "initial_price": 1,
+      "drift": 0.01,
+      "volatility": 0.1,
+      "base_experience_factor": 0.5,
+      "experience_growth": 0.1,
+      "outperform_value": 0.5,
+      "topic": {
+        "loss_method": "mse",
+        "epoch_length": 12,
+        "ground_truth_lag": 12,
+        "worker_submission_window": 10,
+        "p_norm": "3.0",
+        "alpha_regret": "0.1",
+        "allow_negative": false,
+        "epsilon": "0.01",
+        "merit_sortition_alpha": "0.1",
+        "active_inferer_quantile": "0.25",
+        "active_forecaster_quantile": "0.25",
+        "active_reputer_quantile": "0.25"
+      },
+      "global_params": {
+        "max_samples_to_scale_scores": 10
+      }
     }
 }

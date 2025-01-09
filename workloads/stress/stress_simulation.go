@@ -1,4 +1,4 @@
-package simulation
+package stress
 
 import (
 	"sync"
@@ -6,7 +6,7 @@ import (
 	"github.com/allora-network/allora-simulator/types"
 )
 
-type SimulationData struct {
+type StressSimulationData struct {
 	Faucet                    *types.Actor
 	EpochLength               int64
 	Actors                    []*types.Actor
@@ -22,21 +22,21 @@ type Registration struct {
 }
 
 // Add a worker registration to the simulation data
-func (s *SimulationData) AddWorkerRegistration(topicId uint64, actor *types.Actor) {
+func (s *StressSimulationData) AddWorkerRegistration(topicId uint64, actor *types.Actor) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.RegisteredWorkersByTopic[topicId] = append(s.RegisteredWorkersByTopic[topicId], actor)
 }
 
 // Add a reputer registration to the simulation data
-func (s *SimulationData) AddReputerRegistration(topicId uint64, actor *types.Actor) {
+func (s *StressSimulationData) AddReputerRegistration(topicId uint64, actor *types.Actor) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.RegisteredReputersByTopic[topicId] = append(s.RegisteredReputersByTopic[topicId], actor)
 }
 
 // Get an actor object from an address
-func (s *SimulationData) GetActorFromAddr(addr string) (*types.Actor, bool) {
+func (s *StressSimulationData) GetActorFromAddr(addr string) (*types.Actor, bool) {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	for _, actor := range s.Actors {
@@ -48,14 +48,14 @@ func (s *SimulationData) GetActorFromAddr(addr string) (*types.Actor, bool) {
 }
 
 // Get all workers for a topic
-func (s *SimulationData) GetWorkersForTopic(topicId uint64) []*types.Actor {
+func (s *StressSimulationData) GetWorkersForTopic(topicId uint64) []*types.Actor {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.RegisteredWorkersByTopic[topicId]
 }
 
 // Get all reputers for a topic
-func (s *SimulationData) GetReputersForTopic(topicId uint64) []*types.Actor {
+func (s *StressSimulationData) GetReputersForTopic(topicId uint64) []*types.Actor {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.RegisteredReputersByTopic[topicId]

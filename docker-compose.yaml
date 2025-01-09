@@ -1,13 +1,14 @@
 services:
   node:
     container_name: allora_single_node
-    image: "alloranetwork/allora-chain:v0.5.0"
+    image: "alloranetwork/allora-chain:v0.8.1"
+    platform: linux/amd64
     environment:
       - CHAIN_ID=localnet
       - MONIKER=validator
       - APP_HOME=/data
       - HOME=/data
-      - RESET_DATA=false
+      - RESET_DATA=true
     volumes:
       - ./data:/data
       - ./scripts:/scripts
@@ -37,20 +38,24 @@ services:
       retries: 5
 
   indexer-init:
-    image: alloranetwork/allora-indexer:v0.4.0
+    image: alloranetwork/allora-indexer:v0.9.4
+    platform: linux/amd64
     depends_on:
       db:
         condition: service_healthy
     env_file:
       - .env
     command:
+      - --NODE=http://allora_single_node:26657
+      - --CONNECTION=${CONNECTION}
       - --MODE=empty
       - --CONNECTION=${CONNECTION}
+      - --CHAIN_ID=localnet
     networks:
       - app-network
 
   indexer:
-    image: alloranetwork/allora-indexer:v0.4.0
+    image: alloranetwork/allora-indexer:v0.9.4
     platform: linux/amd64
     depends_on:
       db:
@@ -63,11 +68,12 @@ services:
       - .env
     command:
       - --WORKERS_NUM=${WORKERS_NUM:-1}
-      - --NODE=${NODE:-http://allora_single_node:26657}
+      - --NODE=http://allora_single_node:26657
       - --CONNECTION=${CONNECTION}
-      - --MODE=${MODE:-sync}
+      - --MODE=full
       - --BOOTSTRAP_BLOCKHEIGHT=${BOOTSTRAP_BLOCKHEIGHT:-1}
       - --MAX_CONCURRENT_TX_PROCESSING=${MAX_CONCURRENT_TX_PROCESSING:-100}
+      - --CHAIN_ID=localnet
     networks:
       - app-network
 

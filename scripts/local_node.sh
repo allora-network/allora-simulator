@@ -48,7 +48,6 @@ if [ ! -f $INIT_FLAG ]; then
     $BINARY --home=${APP_HOME} config set client chain-id ${CHAIN_ID}
     $BINARY --home=${APP_HOME} config set client keyring-backend $KEYRING_BACKEND
 
-    # Configure node
     # Enable indexer
     dasel put -t string -v "kv" 'tx_index.indexer' -f ${APP_HOME}/config/config.toml
 
@@ -69,6 +68,16 @@ if [ ! -f $INIT_FLAG ]; then
     # Configure RPC
     dasel put -t string -v "tcp://0.0.0.0:26657" 'rpc.laddr' -f ${APP_HOME}/config/config.toml
 
+    # Configure genesis parameters
+    dasel put 'app_state.feemarket.params.fee_denom' -t string -v "uallo" -f ${APP_HOME}/config/genesis.json
+    dasel put 'app_state.feemarket.params.distribute_fees' -t bool -v true -f ${APP_HOME}/config/genesis.json
+    dasel put 'app_state.emissions.params.global_whitelist_enabled' -t bool -v false -f ${APP_HOME}/config/genesis.json
+    dasel put 'app_state.emissions.params.topic_creator_whitelist_enabled' -t bool -v false -f ${APP_HOME}/config/genesis.json
+
+    # Add faucet address to whitelist
+    FAUCET_ADDRESS=$($BINARY --home $APP_HOME keys show faucet -a --keyring-backend $KEYRING_BACKEND)
+    dasel put -t string -v "$FAUCET_ADDRESS" 'app_state.emissions.whitelist_admins.append()' -f ${APP_HOME}/config/genesis.json
+
     touch $INIT_FLAG
 fi
 echo "Node is initialized"
@@ -78,6 +87,8 @@ echo "Starting validator node without cosmovisor"
 allorad \
     --home=${APP_HOME} \
     start \
+    --api.enable \
+    --api.address=tcp://0.0.0.0:1317 \
     --moniker=${MONIKER} \
     --minimum-gas-prices=0${DENOM} \
     --rpc.laddr=tcp://0.0.0.0:26657

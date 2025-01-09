@@ -67,10 +67,14 @@ func (c *Client) BroadcastTx(txBytes []byte, waitForTx bool) (*coretypes.ResultB
 	}
 
 	if waitForTx {
-		_, err := c.WaitForTx(ctx, res.Hash.String())
+		resAfterWait, err := c.WaitForTx(ctx, res.Hash.String())
 		if err != nil {
 			return nil, fmt.Errorf("failed to wait for transaction: %w", err)
 		}
+		// Update the tx code and log after waiting for the tx to be committed
+		res.Code = resAfterWait.TxResult.Code
+		res.Log = resAfterWait.TxResult.Log
+		return res, nil
 	}
 
 	return res, nil

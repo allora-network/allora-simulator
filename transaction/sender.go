@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strconv"
 	"strings"
 	"time"
@@ -35,8 +35,8 @@ func SendDataWithRetry(
 
 		resp, _, err := SendTransactionViaRPC(txParams, currentSequence, waitForTx, msgs...)
 		if err != nil {
-			log.Printf("Transaction failed: %v\n", err)
-			log.Printf("Handling error and retrying...")
+			log.Error().Msgf("Transaction failed: %v", err)
+			log.Info().Msgf("Handling error and retrying...")
 
 			// if sequence mismatch, handle it and retry
 			if strings.Contains(err.Error(), "account sequence mismatch") {
@@ -60,13 +60,20 @@ func SendDataWithRetry(
 				continue
 			}
 			// print if other errors
-			log.Printf("Error: %v\n", err)
+			log.Error().Msgf("Error: %v", err)
 			continue
 		}
 		if resp != nil {
-			log.Printf("Transaction sent successfully: %v\n", resp.Hash.String())
+			if resp.Code != 0 {
+				log.Error().Msgf("Error on the broadcasted transaction: %v", resp.Log)
+				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
+				time.Sleep(delay)
+				continue
+			} else {
+				log.Info().Msgf("Transaction sent successfully: %v", resp.Hash.String())
+			}
 		}
-	
+
 		sequence++
 		return resp, sequence, nil
 	}
