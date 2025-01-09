@@ -17,8 +17,12 @@ The Allora Simulator provides two main modules:
 ```bash
 git clone https://github.com/allora-network/allora-simulator
 cd allora-simulator
-go mod tidy
+make setup
 ```
+The setup command will:
+- Copy `config.example.json` to `config.json`
+- Copy `.env.example` to `.env`
+- Run `go mod tidy`
 
 ## Configuration
 
@@ -32,7 +36,7 @@ go mod tidy
 #### Common Parameters
 ```json
 {
-    "chain_id": "demo",
+    "chain_id": "localnet",
     "denom": "uallo",
     "prefix": "allo",
     "gas_per_byte": 100,
@@ -92,7 +96,7 @@ Choose one of these options:
 #### Option A: Using Docker Compose (New Local Chain)
 1. Create a local chain:
    ```bash
-   docker compose up
+   make docker
    ```
 2. The script will:
    - Generate a faucet account
@@ -109,6 +113,11 @@ Choose one of these options:
        }
    }
    ```
+
+If you want to reset the data, you can run:
+```bash
+make clean-docker
+```
 
 #### Option B: Using Existing Chain
 1. Add your funded account's seedphrase:
@@ -136,7 +145,7 @@ After setting up the chain, you can run either module:
 
 #### Stress Testing Module
 ```bash
-go run cmd/stress/main.go
+make stress
 ```
 Use this to:
 - Test network performance under load
@@ -145,7 +154,7 @@ Use this to:
 
 #### Research Module
 ```bash
-go run cmd/research/main.go
+make research
 ```
 Use this to:
 - Run controlled experiments

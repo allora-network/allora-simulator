@@ -24,3 +24,6 @@ check-data:
 
 docker: check-data
 	docker compose up -d
+
+clean-docker:
+	docker compose down -v
