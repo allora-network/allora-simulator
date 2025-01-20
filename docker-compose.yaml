@@ -77,6 +77,27 @@ services:
     networks:
       - app-network
 
+  producer:
+    image: 696230526504.dkr.ecr.us-east-1.amazonaws.com/allora-producer/allora-localnet-1:v0.1.23
+    platform: linux/amd64
+    depends_on:
+      db:
+        condition: service_healthy
+      node:
+        condition: service_started
+    environment:
+      - ALLORA_DATABASE_URL=${ALLORA_DATABASE_URL}
+      - ALLORA_DATABASE_INIT=${ALLORA_DATABASE_INIT}
+      - ALLORA_QUERY_RESULT_REPOSITORY_URL=${ALLORA_QUERY_RESULT_REPOSITORY_URL}
+      - ALLORA_ALLORA_API_API_KEY=${ALLORA_ALLORA_API_API_KEY}
+      - ALLORA_ENABLED_USE_CASES_EVENTS=${ALLORA_ENABLED_USE_CASES_EVENTS}
+      - ALLORA_ENABLED_USE_CASES_TRANSACTIONS=${ALLORA_ENABLED_USE_CASES_TRANSACTIONS}
+      - ALLORA_ENABLED_USE_CASES_QUERY=${ALLORA_ENABLED_USE_CASES_QUERY}
+    env_file:
+      - .env
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
 
