@@ -2,6 +2,7 @@
 set -e
 
 export APP_HOME="${APP_HOME:-./data}"
+SEEDPHRASE="${SEEDPHRASE:-/scripts/seedphrase}"
 INIT_FLAG="${APP_HOME}/.initialized"
 MONIKER="${MONIKER:-validator}"
 KEYRING_BACKEND=test
@@ -24,15 +25,12 @@ if [ ! -f $INIT_FLAG ]; then
     # Remove if existing config
     rm -rf ${APP_HOME}/config
 
-    # Create symlink for allorad config
-    ln -sf ${APP_HOME} ${HOME}/.allorad
-
     # Init node
     $BINARY --home=${APP_HOME} init ${MONIKER} --chain-id=${CHAIN_ID} --default-denom $DENOM
 
     # Create accounts
     $BINARY --home $APP_HOME keys add ${MONIKER} --keyring-backend $KEYRING_BACKEND > $APP_HOME/${MONIKER}.account_info 2>&1
-    $BINARY --home $APP_HOME keys add faucet --keyring-backend $KEYRING_BACKEND 2>&1 | tee $APP_HOME/faucet.account_info | tail -n 1 | tr -d '\n' | tee $APP_HOME/seedphrase /scripts/seedphrase > /dev/null
+    $BINARY --home $APP_HOME keys add faucet --keyring-backend $KEYRING_BACKEND 2>&1 | tee $APP_HOME/faucet.account_info | tail -n 1 | tr -d '\n' | tee $APP_HOME/seedphrase $SEEDPHRASE > /dev/null
 
     # Add genesis accounts
     $BINARY --home=${APP_HOME} genesis add-genesis-account $MONIKER 10000000allo --keyring-backend test
