@@ -3,10 +3,11 @@ package research
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
@@ -94,8 +95,15 @@ func runWorkersProcess(
 		LastReturn:       0,
 	}
 	// Generate cold start epoch data
-	data.GenerateInfererSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
-	data.GenerateForecasterSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
+	inferers := data.GetInferersForTopic(topicId)
+	if len(inferers) > 0 {
+		data.GenerateInfererSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
+	}
+	forecasters := data.GetForecastersForTopic(topicId)
+	if len(forecasters) > 0 {
+		data.GenerateForecasterSimulatedValuesForNextEpoch(&config.Research, topicId, numberOfActiveEpochs, groundTruthState)
+	}
+
 	for {
 		latestOpenInfererNonce, err := lib.GetLatestOpenWorkerNonceByTopicId(config, topicId) // TODO: Update this function name
 		if err != nil {

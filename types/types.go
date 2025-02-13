@@ -158,14 +158,15 @@ type GetNetworkInferencesAtBlockResponse struct {
 // RESEARCH MODULE
 
 type ResearchConfig struct {
-	InitialPrice         float64      `json:"initial_price"`
-	Drift                float64      `json:"drift"`
-	Volatility           float64      `json:"volatility"`
-	BaseExperienceFactor float64      `json:"base_experience_factor"`
-	ExperienceGrowth     float64      `json:"experience_growth"`
-	OutperformValue      float64      `json:"outperform_value"`
-	Topic                TopicConfig  `json:"topic"`
-	GlobalParams         GlobalParams `json:"global_params"`
+	InitialPrice           float64      `json:"initial_price"`
+	Drift                  float64      `json:"drift"`
+	Volatility             float64      `json:"volatility"`
+	BaseExperienceFactor   float64      `json:"base_experience_factor"`
+	ExperienceGrowth       float64      `json:"experience_growth"`
+	OutperformValue        float64      `json:"outperform_value"`
+	ConsistentOutperformer bool         `json:"consistent_outperformer"`
+	Topic                  TopicConfig  `json:"topic"`
+	GlobalParams           GlobalParams `json:"global_params"`
 }
 
 type GlobalParams struct {

@@ -8,6 +8,7 @@ import (
 	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/types"
+	"github.com/rs/zerolog/log"
 )
 
 type ResearchSimulationData struct {
@@ -134,23 +135,32 @@ func (s *ResearchSimulationData) SetForecasterOutperformer(topicId uint64, forec
 	s.ForecasterOutperformers[topicId] = forecasters[outperformer].Addr
 }
 
-func (s *ResearchSimulationData) SetInfererOutperformer(topicId uint64, inferers []*types.Actor) {
+func (s *ResearchSimulationData) SetInfererOutperformer(config *types.ResearchConfig, topicId uint64, inferers []*types.Actor) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
-	// Randomly select an outperformer
-	outperformer := rand.Intn(len(inferers))
-	s.InfererOutperformers[topicId] = inferers[outperformer].Addr
+	if config.ConsistentOutperformer {
+		// Select the first inferer as the outperformer
+		s.InfererOutperformers[topicId] = inferers[0].Addr
+	} else {
+		// Randomly select an outperformer
+		outperformer := rand.Intn(len(inferers))
+		s.InfererOutperformers[topicId] = inferers[outperformer].Addr
+	}
+	log.Info().Msgf("Inferer %s is the outperformer", s.InfererOutperformers[topicId])
 }
 
 // Generate inferer simulated values for next epoch
 func (s *ResearchSimulationData) GenerateInfererSimulatedValuesForNextEpoch(config *types.ResearchConfig, topicId uint64, numberOfActiveEpochs int64, groundTruthState *types.GroundTruthState) {
 	inferers := s.GetInferersForTopic(topicId)
-	s.SetInfererOutperformer(topicId, inferers)
+	s.SetInfererOutperformer(config, topicId, inferers)
 
 	infererSimulatedValues := map[string]*alloramath.Dec{}
 	for _, inferer := range inferers {
 		outperformer := s.GetInfererOutperformer(topicId)
+		if inferer.Addr == outperformer {
+			log.Info().Msgf("Inferer %s is the outperformer", inferer.Addr)
+		}
 		simulatedValue := GetInfererOutput(
 			&inferer.TxParams.Config.Research,
 			groundTruthState.CurrentPrice,
@@ -171,7 +181,9 @@ func (s *ResearchSimulationData) GenerateForecasterSimulatedValuesForNextEpoch(
 	groundTruthState *types.GroundTruthState,
 ) {
 	forecasters := s.GetForecastersForTopic(topicId)
-	s.SetForecasterOutperformer(topicId, forecasters)
+	if len(forecasters) > 0 {
+		s.SetForecasterOutperformer(topicId, forecasters)
+	}
 
 	// Get inferer simulated values
 	infererSimulatedValues := s.GetInfererSimulatedValues(topicId)
