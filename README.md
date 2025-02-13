@@ -66,6 +66,7 @@ The setup command will:
         "base_experience_factor": 0.5,
         "experience_growth": 0.1,
         "outperform_value": 0.5,
+        "consistent_outperformer": false,
         "topic": {
             "loss_method": "mse",
             "epoch_length": 12,
