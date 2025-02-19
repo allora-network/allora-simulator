@@ -42,9 +42,9 @@ func InitializeReputerResearchParams() *types.ResearchParams {
 	return params
 }
 
-// Helper functions
+// Experience factor: decays from 1 to 0.5 as age increases
 func experienceFactor(config *types.ResearchConfig, age int) float64 {
-	return config.BaseExperienceFactor + config.ExperienceGrowth*float64(age)
+	return config.BaseExperienceFactor * (1.0 + math.Exp(config.ExperienceGrowth*float64(age)))
 }
 
 func GetOutperformFactor(config *types.ResearchConfig, outperform bool) float64 {
