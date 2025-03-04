@@ -130,6 +130,11 @@ func GetForecasterOutput(
 			contextSens*math.Log10(predictedLossContext)+
 				(1-contextSens)*math.Log10(predictedLossNoContext))
 
+		// Check value is not NaN, Inf, or -Inf
+		if math.IsNaN(finalLoss) || math.IsInf(finalLoss, 0) || finalLoss <= 0 {
+			continue
+		}
+
 		forecastElements = append(forecastElements, &emissionstypes.ForecastElement{
 			Inferer: loss.InfererAddr,
 			Value:   alloramath.MustNewDecFromString(fmt.Sprintf("%f", finalLoss)),
