@@ -13,6 +13,9 @@ import (
 	"github.com/allora-network/allora-simulator/types"
 )
 
+// Update this when the API version changes
+const ALLORA_API_VERSION = "v8"
+
 func GetAccountInfo(address string, config *types.Config) (seqint, accnum uint64, err error) {
 	resp, err := client.HTTPGet(config.Nodes.API + "/cosmos/auth/v1beta1/accounts/" + address)
 	if err != nil {
@@ -65,7 +68,7 @@ func GetAccountBalance(address string, config *types.Config) (cosmosmath.Int, er
 }
 
 func GetNextTopicId(config *types.Config) (uint64, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v8/next_topic_id")
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/" + ALLORA_API_VERSION + "/next_topic_id")
 	if err != nil {
 		return 0, err
 	}
@@ -86,7 +89,7 @@ func GetNextTopicId(config *types.Config) (uint64, error) {
 
 // Get the latest open worker nonce for a topic
 func GetLatestOpenWorkerNonceByTopicId(config *types.Config, topicId uint64) (int64, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v8/unfulfilled_worker_nonces/" + strconv.FormatUint(topicId, 10))
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/" + ALLORA_API_VERSION + "/unfulfilled_worker_nonces/" + strconv.FormatUint(topicId, 10))
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +115,7 @@ func GetLatestOpenWorkerNonceByTopicId(config *types.Config, topicId uint64) (in
 
 // Get the oldest reputer nonce for a topic
 func GetOldestReputerNonceByTopicId(config *types.Config, topicId uint64) (int64, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v8/unfulfilled_reputer_nonces/" + strconv.FormatUint(topicId, 10))
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/" + ALLORA_API_VERSION + "/unfulfilled_reputer_nonces/" + strconv.FormatUint(topicId, 10))
 	if err != nil {
 		return 0, err
 	}
@@ -138,7 +141,7 @@ func GetOldestReputerNonceByTopicId(config *types.Config, topicId uint64) (int64
 
 // Get the active workers for a topic at a given block height to use for reputer payloads
 func GetActiveWorkersForTopic(config *types.Config, topicId uint64, blockHeight int64) ([]string, error) {
-	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/v8/inferences/" + strconv.FormatUint(topicId, 10) + "/" + strconv.FormatInt(blockHeight, 10))
+	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/" + ALLORA_API_VERSION + "/inferences/" + strconv.FormatUint(topicId, 10) + "/" + strconv.FormatInt(blockHeight, 10))
 	if err != nil {
 		return []string{}, err
 	}
@@ -158,7 +161,7 @@ func GetActiveWorkersForTopic(config *types.Config, topicId uint64, blockHeight 
 }
 
 func GetNetworkInferencesAtBlock(config *types.Config, topicId uint64, blockHeight int64) (*emissionstypes.ValueBundle, error) {
-	resp, err := client.HTTPGet(fmt.Sprintf("%s/emissions/v8/network_inferences/%d/last_inference/%d",
+	resp, err := client.HTTPGet(fmt.Sprintf("%s/emissions/"+ALLORA_API_VERSION+"/network_inferences/%d/last_inference/%d",
 		config.Nodes.API,
 		topicId,
 		blockHeight))
