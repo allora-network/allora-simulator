@@ -9,6 +9,7 @@ import (
 	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/types"
+	log "github.com/rs/zerolog/log"
 )
 
 // InitializeWorkerResearchParams generates research parameters for workers/inferers
@@ -129,6 +130,12 @@ func GetForecasterOutput(
 		finalLoss := math.Pow(10,
 			contextSens*math.Log10(predictedLossContext)+
 				(1-contextSens)*math.Log10(predictedLossNoContext))
+
+		// Check value is not NaN, Inf, or -Inf
+		if math.IsNaN(finalLoss) || math.IsInf(finalLoss, 0) || finalLoss <= 0 {
+			log.Error().Msgf("Invalid loss value: %f", finalLoss)
+			continue
+		}
 
 		forecastElements = append(forecastElements, &emissionstypes.ForecastElement{
 			Inferer: loss.InfererAddr,
