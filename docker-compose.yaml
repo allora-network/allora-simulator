@@ -1,7 +1,7 @@
 services:
   node:
     container_name: allora_single_node
-    image: "alloranetwork/allora-chain:v0.9.0"
+    image: "alloranetwork/allora-chain:v0.10.0-beta1"
     platform: linux/amd64
     environment:
       - CHAIN_ID=localnet
@@ -38,7 +38,7 @@ services:
       retries: 5
 
   indexer-init:
-    image: alloranetwork/allora-indexer:v0.10.2
+    image: alloranetwork/allora-indexer:v0.11.0-beta1
     platform: linux/amd64
     depends_on:
       db:
@@ -55,7 +55,7 @@ services:
       - app-network
 
   indexer:
-    image: alloranetwork/allora-indexer:v0.10.2
+    image: alloranetwork/allora-indexer:v0.11.0-beta1
     platform: linux/amd64
     depends_on:
       db:
@@ -78,8 +78,8 @@ services:
       - app-network
 
   producer:
-    image: 696230526504.dkr.ecr.us-east-1.amazonaws.com/allora-producer:v0.1.28
-    # platform: linux/amd64
+    image: 696230526504.dkr.ecr.us-east-1.amazonaws.com/allora-producer:v0.2.0-beta1 
+    platform: linux/amd64
     depends_on:
       db:
         condition: service_healthy
