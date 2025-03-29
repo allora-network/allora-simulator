@@ -341,7 +341,7 @@ func createReputerValueBundle(
 		ReputerRequestNonce: &emissionstypes.ReputerRequestNonce{
 			ReputerNonce: reputerNonce,
 		},
-		OneOutInfererForecasterValues: nil,
+		OneOutInfererForecasterValues: generateOneOutInfererForecasterValues(workers),
 	}
 
 	// Sign transaction
@@ -394,5 +394,24 @@ func generateWithheldWorkerAttributedValueLosses(
 			Value:  alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
 		})
 	}
+	return values
+}
+
+// Generate OneOutInfererForecasterValues for each worker (as forecaster)
+func generateOneOutInfererForecasterValues(
+	workers []string,
+) []*emissionstypes.InputOneOutInfererForecasterValues {
+	values := make([]*emissionstypes.InputOneOutInfererForecasterValues, 0)
+
+	// For each worker as forecaster
+	for _, forecaster := range workers {
+		// Create the OneOutInfererForecasterValues entry
+		forecastEntry := &emissionstypes.InputOneOutInfererForecasterValues{
+			Forecaster:          forecaster,
+			OneOutInfererValues: generateWithheldWorkerAttributedValueLosses(workers, 50, 50),
+		}
+		values = append(values, forecastEntry)
+	}
+
 	return values
 }
