@@ -226,7 +226,7 @@ func createWorkerDataBundle(
 				TopicId:     topicId,
 				BlockHeight: blockHeight,
 				Inferer:     inferer.Addr,
-				Value:       alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(300)+3000)),
+				Value:       alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(300)+3000)),
 				ExtraData:   nil,
 				Proof:       "",
 			},
@@ -240,7 +240,7 @@ func createWorkerDataBundle(
 	for _, previousActiveInfererAddress := range previousActiveInferersAddresses {
 		forecastElements = append(forecastElements, &emissionstypes.InputForecastElement{
 			Inferer: previousActiveInfererAddress,
-			Value:   alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(51)+50)),
+			Value:   alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(51)+50)),
 		})
 	}
 	// If there are forecast elements, create a forecast
@@ -331,10 +331,10 @@ func createReputerValueBundle(
 		TopicId:                topicId,
 		Reputer:                reputer.Addr,
 		ExtraData:              nil,
-		CombinedValue:          alloramath.MustNewBoundedExp40DecFromString("100"),
+		CombinedValue:          alloramath.MustNewCappedBoundedExp40DecFromString("100"),
 		InfererValues:          generateWorkerAttributedValueLosses(workers, 3000, 3500),
 		ForecasterValues:       generateWorkerAttributedValueLosses(workers, 50, 50),
-		NaiveValue:             alloramath.MustNewBoundedExp40DecFromString("100"),
+		NaiveValue:             alloramath.MustNewCappedBoundedExp40DecFromString("100"),
 		OneOutInfererValues:    generateWithheldWorkerAttributedValueLosses(workers, 50, 50),
 		OneOutForecasterValues: generateWithheldWorkerAttributedValueLosses(workers, 50, 50),
 		OneInForecasterValues:  generateWorkerAttributedValueLosses(workers, 50, 50),
@@ -375,7 +375,7 @@ func generateWorkerAttributedValueLosses(
 	for _, worker := range workers {
 		values = append(values, &emissionstypes.InputWorkerAttributedValue{
 			Worker: worker,
-			Value:  alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
+			Value:  alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
 		})
 	}
 	return values
@@ -391,7 +391,7 @@ func generateWithheldWorkerAttributedValueLosses(
 	for _, worker := range workers {
 		values = append(values, &emissionstypes.InputWithheldWorkerAttributedValue{
 			Worker: worker,
-			Value:  alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
+			Value:  alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
 		})
 	}
 	return values

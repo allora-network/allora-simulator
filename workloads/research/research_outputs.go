@@ -94,7 +94,7 @@ func GetInfererOutput(
 	// Calculate prediction
 	prediction := groundTruth + difference
 
-	return alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%f", prediction))
+	return alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%f", prediction))
 }
 
 // Generates forecaster output
@@ -139,7 +139,7 @@ func GetForecasterOutput(
 
 		forecastElements = append(forecastElements, &emissionstypes.InputForecastElement{
 			Inferer: loss.InfererAddr,
-			Value:   alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%f", finalLoss)),
+			Value:   alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%f", finalLoss)),
 		})
 	}
 
@@ -167,7 +167,7 @@ func GetReputerOutput(sourceTruth float64, vb *emissionstypes.ValueBundle, logEr
 		logDiff := rand.NormFloat64()*logError + logBias
 		perturbedLoss := math.Pow(10, math.Log10(baseLoss)+logDiff)
 
-		return alloramath.MustNewBoundedExp40DecFromString(fmt.Sprintf("%f", perturbedLoss)), nil
+		return alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%f", perturbedLoss)), nil
 	}
 
 	// Combined Value

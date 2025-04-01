@@ -69,8 +69,6 @@ func GetAccountBalance(address string, config *types.Config) (cosmosmath.Int, er
 
 func GetNextTopicId(config *types.Config) (uint64, error) {
 	resp, err := client.HTTPGet(config.Nodes.API + "/emissions/" + ALLORA_API_VERSION + "/next_topic_id")
-	fmt.Println("resp", string(resp))
-	fmt.Println("err", err)
 	if err != nil {
 		return 0, err
 	}
