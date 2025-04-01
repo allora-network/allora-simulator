@@ -83,9 +83,9 @@ func CreateAndFundActors(
 		RegisteredReputersByTopic:    map[uint64][]*types.Actor{},
 		FailOnErr:                    false,
 		Mu:                           sync.RWMutex{},
-		InfererSimulatedValues:       make(map[uint64]map[string]*alloramath.Dec),
+		InfererSimulatedValues:       make(map[uint64]map[string]*alloramath.BoundedExp40Dec),
 		InfererOutperformers:         make(map[uint64]string),
-		ForecasterSimulatedValues:    make(map[uint64]map[string][]*emissionstypes.ForecastElement),
+		ForecasterSimulatedValues:    make(map[uint64]map[string][]*emissionstypes.InputForecastElement),
 		ForecasterOutperformers:      make(map[uint64]string),
 	}
 

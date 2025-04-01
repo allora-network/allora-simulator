@@ -214,19 +214,19 @@ func createWorkerDataBundle(
 	blockHeight int64,
 	inferer *types.Actor,
 	previousActiveInferersAddresses []string,
-) (*emissionstypes.WorkerDataBundle, error) {
-	workerDataBundle := &emissionstypes.WorkerDataBundle{
+) (*emissionstypes.InputWorkerDataBundle, error) {
+	workerDataBundle := &emissionstypes.InputWorkerDataBundle{
 		Worker: inferer.Addr,
 		Nonce: &emissionstypes.Nonce{
 			BlockHeight: blockHeight,
 		},
 		TopicId: topicId,
-		InferenceForecastsBundle: &emissionstypes.InferenceForecastBundle{
-			Inference: &emissionstypes.Inference{
+		InferenceForecastsBundle: &emissionstypes.InputInferenceForecastBundle{
+			Inference: &emissionstypes.InputInference{
 				TopicId:     topicId,
 				BlockHeight: blockHeight,
 				Inferer:     inferer.Addr,
-				Value:       alloramath.NewDecFromInt64(int64(rand.Intn(300) + 3000)),
+				Value:       alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(300)+3000)),
 				ExtraData:   nil,
 				Proof:       "",
 			},
@@ -236,16 +236,16 @@ func createWorkerDataBundle(
 		Pubkey:                             "",
 	}
 
-	forecastElements := make([]*emissionstypes.ForecastElement, 0)
+	forecastElements := make([]*emissionstypes.InputForecastElement, 0)
 	for _, previousActiveInfererAddress := range previousActiveInferersAddresses {
-		forecastElements = append(forecastElements, &emissionstypes.ForecastElement{
+		forecastElements = append(forecastElements, &emissionstypes.InputForecastElement{
 			Inferer: previousActiveInfererAddress,
-			Value:   alloramath.NewDecFromInt64(int64(rand.Intn(51) + 50)),
+			Value:   alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(51)+50)),
 		})
 	}
 	// If there are forecast elements, create a forecast
 	if len(forecastElements) != 0 {
-		workerDataBundle.InferenceForecastsBundle.Forecast = &emissionstypes.Forecast{
+		workerDataBundle.InferenceForecastsBundle.Forecast = &emissionstypes.InputForecast{
 			TopicId:          topicId,
 			BlockHeight:      blockHeight,
 			Forecaster:       inferer.Addr,
@@ -326,22 +326,22 @@ func createReputerValueBundle(
 	reputer *types.Actor,
 	workers []string,
 	reputerNonce *emissionstypes.Nonce,
-) (*emissionstypes.ReputerValueBundle, error) {
-	valueBundle := emissionstypes.ValueBundle{
+) (*emissionstypes.InputReputerValueBundle, error) {
+	valueBundle := emissionstypes.InputValueBundle{
 		TopicId:                topicId,
 		Reputer:                reputer.Addr,
 		ExtraData:              nil,
-		CombinedValue:          alloramath.NewDecFromInt64(100),
+		CombinedValue:          alloramath.MustNewCappedBoundedExp40DecFromString("100"),
 		InfererValues:          generateWorkerAttributedValueLosses(workers, 3000, 3500),
 		ForecasterValues:       generateWorkerAttributedValueLosses(workers, 50, 50),
-		NaiveValue:             alloramath.NewDecFromInt64(100),
+		NaiveValue:             alloramath.MustNewCappedBoundedExp40DecFromString("100"),
 		OneOutInfererValues:    generateWithheldWorkerAttributedValueLosses(workers, 50, 50),
 		OneOutForecasterValues: generateWithheldWorkerAttributedValueLosses(workers, 50, 50),
 		OneInForecasterValues:  generateWorkerAttributedValueLosses(workers, 50, 50),
 		ReputerRequestNonce: &emissionstypes.ReputerRequestNonce{
 			ReputerNonce: reputerNonce,
 		},
-		OneOutInfererForecasterValues: nil,
+		OneOutInfererForecasterValues: generateOneOutInfererForecasterValues(workers),
 	}
 
 	// Sign transaction
@@ -356,7 +356,7 @@ func createReputerValueBundle(
 	}
 
 	// Create a InsertReputerPayloadRequest message
-	reputerValueBundle := &emissionstypes.ReputerValueBundle{
+	reputerValueBundle := &emissionstypes.InputReputerValueBundle{
 		ValueBundle: &valueBundle,
 		Signature:   sig,
 		Pubkey:      hex.EncodeToString(reputer.TxParams.PubKey.Bytes()),
@@ -370,12 +370,12 @@ func generateWorkerAttributedValueLosses(
 	workers []string,
 	lowLimit,
 	sum int,
-) []*emissionstypes.WorkerAttributedValue {
-	values := make([]*emissionstypes.WorkerAttributedValue, 0)
+) []*emissionstypes.InputWorkerAttributedValue {
+	values := make([]*emissionstypes.InputWorkerAttributedValue, 0)
 	for _, worker := range workers {
-		values = append(values, &emissionstypes.WorkerAttributedValue{
+		values = append(values, &emissionstypes.InputWorkerAttributedValue{
 			Worker: worker,
-			Value:  alloramath.NewDecFromInt64(int64(rand.Intn(lowLimit) + sum)),
+			Value:  alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
 		})
 	}
 	return values
@@ -386,13 +386,32 @@ func generateWithheldWorkerAttributedValueLosses(
 	workers []string,
 	lowLimit,
 	sum int,
-) []*emissionstypes.WithheldWorkerAttributedValue {
-	values := make([]*emissionstypes.WithheldWorkerAttributedValue, 0)
+) []*emissionstypes.InputWithheldWorkerAttributedValue {
+	values := make([]*emissionstypes.InputWithheldWorkerAttributedValue, 0)
 	for _, worker := range workers {
-		values = append(values, &emissionstypes.WithheldWorkerAttributedValue{
+		values = append(values, &emissionstypes.InputWithheldWorkerAttributedValue{
 			Worker: worker,
-			Value:  alloramath.NewDecFromInt64(int64(rand.Intn(lowLimit) + sum)),
+			Value:  alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%d", rand.Intn(lowLimit)+sum)),
 		})
 	}
+	return values
+}
+
+// Generate OneOutInfererForecasterValues for each worker (as forecaster)
+func generateOneOutInfererForecasterValues(
+	workers []string,
+) []*emissionstypes.InputOneOutInfererForecasterValues {
+	values := make([]*emissionstypes.InputOneOutInfererForecasterValues, 0)
+
+	// For each worker as forecaster
+	for _, forecaster := range workers {
+		// Create the OneOutInfererForecasterValues entry
+		forecastEntry := &emissionstypes.InputOneOutInfererForecasterValues{
+			Forecaster:          forecaster,
+			OneOutInfererValues: generateWithheldWorkerAttributedValueLosses(workers, 50, 50),
+		}
+		values = append(values, forecastEntry)
+	}
+
 	return values
 }

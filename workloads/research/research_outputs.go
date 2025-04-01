@@ -80,7 +80,7 @@ func GetInfererOutput(
 	bias float64,
 	age int,
 	outperformFlag bool,
-) alloramath.Dec {
+) alloramath.BoundedExp40Dec {
 	factor := GetOutperformFactor(config, outperformFlag)
 	xp := experienceFactor(config, age)
 
@@ -94,7 +94,7 @@ func GetInfererOutput(
 	// Calculate prediction
 	prediction := groundTruth + difference
 
-	return alloramath.MustNewDecFromString(fmt.Sprintf("%f", prediction))
+	return alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%f", prediction))
 }
 
 // Generates forecaster output
@@ -105,12 +105,12 @@ func GetForecasterOutput(
 	logBias float64,
 	contextSens float64,
 	age int,
-) []*emissionstypes.ForecastElement {
+) []*emissionstypes.InputForecastElement {
 	xp := experienceFactor(config, age)
 	adjustedLogError := xp * logError
 	adjustedLogBias := xp * logBias
 
-	forecastElements := make([]*emissionstypes.ForecastElement, 0)
+	forecastElements := make([]*emissionstypes.InputForecastElement, 0)
 	// Generate random log differences
 	for _, loss := range lossObs {
 		logDiff := rand.NormFloat64()*adjustedLogError + adjustedLogBias
@@ -137,27 +137,27 @@ func GetForecasterOutput(
 			continue
 		}
 
-		forecastElements = append(forecastElements, &emissionstypes.ForecastElement{
+		forecastElements = append(forecastElements, &emissionstypes.InputForecastElement{
 			Inferer: loss.InfererAddr,
-			Value:   alloramath.MustNewDecFromString(fmt.Sprintf("%f", finalLoss)),
+			Value:   alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%f", finalLoss)),
 		})
 	}
 
 	return forecastElements
 }
 
-func GetReputerOutput(sourceTruth float64, vb *emissionstypes.ValueBundle, logError, logBias float64) (emissionstypes.ValueBundle, error) {
-	losses := emissionstypes.ValueBundle{
+func GetReputerOutput(sourceTruth float64, vb *emissionstypes.ValueBundle, logError, logBias float64) (emissionstypes.InputValueBundle, error) {
+	losses := emissionstypes.InputValueBundle{
 		TopicId:             vb.TopicId,
 		ReputerRequestNonce: vb.ReputerRequestNonce,
 		Reputer:             vb.Reputer,
 		ExtraData:           vb.ExtraData,
 	}
 
-	computeLoss := func(value alloramath.Dec) (alloramath.Dec, error) {
+	computeLoss := func(value alloramath.Dec) (alloramath.BoundedExp40Dec, error) {
 		valueFloat, err := strconv.ParseFloat(value.String(), 64)
 		if err != nil {
-			return alloramath.Dec{}, err
+			return alloramath.BoundedExp40Dec{}, err
 		}
 
 		// Calculate base loss
@@ -167,69 +167,86 @@ func GetReputerOutput(sourceTruth float64, vb *emissionstypes.ValueBundle, logEr
 		logDiff := rand.NormFloat64()*logError + logBias
 		perturbedLoss := math.Pow(10, math.Log10(baseLoss)+logDiff)
 
-		return alloramath.MustNewDecFromString(fmt.Sprintf("%f", perturbedLoss)), nil
+		return alloramath.MustNewCappedBoundedExp40DecFromString(fmt.Sprintf("%f", perturbedLoss)), nil
 	}
 
 	// Combined Value
 	combinedLoss, err := computeLoss(vb.CombinedValue)
 	if err != nil {
-		return emissionstypes.ValueBundle{}, err
+		return emissionstypes.InputValueBundle{}, err
 	}
 	losses.CombinedValue = combinedLoss
 
 	// Naive Value
 	naiveLoss, err := computeLoss(vb.NaiveValue)
 	if err != nil {
-		return emissionstypes.ValueBundle{}, err
+		return emissionstypes.InputValueBundle{}, err
 	}
 	losses.NaiveValue = naiveLoss
 
 	// Inferer Values
-	losses.InfererValues = make([]*emissionstypes.WorkerAttributedValue, len(vb.InfererValues))
+	losses.InfererValues = make([]*emissionstypes.InputWorkerAttributedValue, len(vb.InfererValues))
 	for i, val := range vb.InfererValues {
 		loss, err := computeLoss(val.Value)
 		if err != nil {
-			return emissionstypes.ValueBundle{}, err
+			return emissionstypes.InputValueBundle{}, err
 		}
-		losses.InfererValues[i] = &emissionstypes.WorkerAttributedValue{Worker: val.Worker, Value: loss}
+		losses.InfererValues[i] = &emissionstypes.InputWorkerAttributedValue{Worker: val.Worker, Value: loss}
 	}
 
 	// Forecaster Values
-	losses.ForecasterValues = make([]*emissionstypes.WorkerAttributedValue, len(vb.ForecasterValues))
+	losses.ForecasterValues = make([]*emissionstypes.InputWorkerAttributedValue, len(vb.ForecasterValues))
 	for i, val := range vb.ForecasterValues {
 		loss, err := computeLoss(val.Value)
 		if err != nil {
-			return emissionstypes.ValueBundle{}, err
+			return emissionstypes.InputValueBundle{}, err
 		}
-		losses.ForecasterValues[i] = &emissionstypes.WorkerAttributedValue{Worker: val.Worker, Value: loss}
+		losses.ForecasterValues[i] = &emissionstypes.InputWorkerAttributedValue{Worker: val.Worker, Value: loss}
 	}
 
 	// One Out Values
-	losses.OneOutInfererValues = make([]*emissionstypes.WithheldWorkerAttributedValue, len(vb.OneOutInfererValues))
+	losses.OneOutInfererValues = make([]*emissionstypes.InputWithheldWorkerAttributedValue, len(vb.OneOutInfererValues))
 	for i, val := range vb.OneOutInfererValues {
 		loss, err := computeLoss(val.Value)
 		if err != nil {
-			return emissionstypes.ValueBundle{}, err
+			return emissionstypes.InputValueBundle{}, err
 		}
-		losses.OneOutInfererValues[i] = &emissionstypes.WithheldWorkerAttributedValue{Worker: val.Worker, Value: loss}
+		losses.OneOutInfererValues[i] = &emissionstypes.InputWithheldWorkerAttributedValue{Worker: val.Worker, Value: loss}
 	}
 
-	losses.OneOutForecasterValues = make([]*emissionstypes.WithheldWorkerAttributedValue, len(vb.OneOutForecasterValues))
+	losses.OneOutForecasterValues = make([]*emissionstypes.InputWithheldWorkerAttributedValue, len(vb.OneOutForecasterValues))
 	for i, val := range vb.OneOutForecasterValues {
 		loss, err := computeLoss(val.Value)
 		if err != nil {
-			return emissionstypes.ValueBundle{}, err
+			return emissionstypes.InputValueBundle{}, err
 		}
-		losses.OneOutForecasterValues[i] = &emissionstypes.WithheldWorkerAttributedValue{Worker: val.Worker, Value: loss}
+		losses.OneOutForecasterValues[i] = &emissionstypes.InputWithheldWorkerAttributedValue{Worker: val.Worker, Value: loss}
 	}
 
-	losses.OneInForecasterValues = make([]*emissionstypes.WorkerAttributedValue, len(vb.OneInForecasterValues))
+	losses.OneInForecasterValues = make([]*emissionstypes.InputWorkerAttributedValue, len(vb.OneInForecasterValues))
 	for i, val := range vb.OneInForecasterValues {
 		loss, err := computeLoss(val.Value)
 		if err != nil {
-			return emissionstypes.ValueBundle{}, err
+			return emissionstypes.InputValueBundle{}, err
 		}
-		losses.OneInForecasterValues[i] = &emissionstypes.WorkerAttributedValue{Worker: val.Worker, Value: loss}
+		losses.OneInForecasterValues[i] = &emissionstypes.InputWorkerAttributedValue{Worker: val.Worker, Value: loss}
+	}
+
+	losses.OneOutInfererForecasterValues = make([]*emissionstypes.InputOneOutInfererForecasterValues, len(vb.OneOutInfererForecasterValues))
+	for i, val := range vb.OneOutInfererForecasterValues {
+		oneOutInfererValues := make([]*emissionstypes.InputWithheldWorkerAttributedValue, len(val.OneOutInfererValues))
+		for j, infererVal := range val.OneOutInfererValues {
+			loss, err := computeLoss(infererVal.Value)
+			if err != nil {
+				return emissionstypes.InputValueBundle{}, err
+			}
+			oneOutInfererValues[j] = &emissionstypes.InputWithheldWorkerAttributedValue{Worker: infererVal.Worker, Value: loss}
+		}
+
+		losses.OneOutInfererForecasterValues[i] = &emissionstypes.InputOneOutInfererForecasterValues{
+			Forecaster:          val.Forecaster,
+			OneOutInfererValues: oneOutInfererValues,
+		}
 	}
 
 	return losses, nil

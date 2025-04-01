@@ -232,18 +232,18 @@ func createInfererDataBundle(
 	topicId uint64,
 	blockHeight int64,
 	inferer *types.Actor,
-) (*emissionstypes.WorkerDataBundle, error) {
+) (*emissionstypes.InputWorkerDataBundle, error) {
 	// Get inferer simulated value
 	infererSimulatedValue := data.GetInfererSimulatedValue(topicId, inferer.Addr)
 
-	infererDataBundle := &emissionstypes.WorkerDataBundle{
+	infererDataBundle := &emissionstypes.InputWorkerDataBundle{
 		Worker: inferer.Addr,
 		Nonce: &emissionstypes.Nonce{
 			BlockHeight: blockHeight,
 		},
 		TopicId: topicId,
-		InferenceForecastsBundle: &emissionstypes.InferenceForecastBundle{
-			Inference: &emissionstypes.Inference{
+		InferenceForecastsBundle: &emissionstypes.InputInferenceForecastBundle{
+			Inference: &emissionstypes.InputInference{
 				TopicId:     topicId,
 				BlockHeight: blockHeight,
 				Inferer:     inferer.Addr,
@@ -327,7 +327,7 @@ func createReputerValueBundle(
 	reputer *types.Actor,
 	reputerNonce int64,
 	groundTruthState *types.GroundTruthState,
-) (*emissionstypes.ReputerValueBundle, error) {
+) (*emissionstypes.InputReputerValueBundle, error) {
 
 	// Get Network Inferences
 	networkInferences, err := lib.GetNetworkInferencesAtBlock(config, topicId, reputerNonce)
@@ -366,7 +366,7 @@ func createReputerValueBundle(
 	}
 
 	// Create a InsertReputerPayloadRequest message
-	reputerValueBundle := &emissionstypes.ReputerValueBundle{
+	reputerValueBundle := &emissionstypes.InputReputerValueBundle{
 		ValueBundle: &lossBundle,
 		Signature:   sig,
 		Pubkey:      hex.EncodeToString(reputer.TxParams.PubKey.Bytes()),
@@ -424,17 +424,17 @@ func createForecasterDataBundle(
 	topicId uint64,
 	blockHeight int64,
 	forecaster *types.Actor,
-) (*emissionstypes.WorkerDataBundle, error) {
+) (*emissionstypes.InputWorkerDataBundle, error) {
 	// Get forecaster simulated values
 	forecasterSimulatedValues := data.GetForecasterSimulatedValue(topicId, forecaster.Addr)
 
-	workerDataBundle := &emissionstypes.WorkerDataBundle{
+	workerDataBundle := &emissionstypes.InputWorkerDataBundle{
 		Worker: forecaster.Addr,
 		Nonce: &emissionstypes.Nonce{
 			BlockHeight: blockHeight,
 		},
 		TopicId: topicId,
-		InferenceForecastsBundle: &emissionstypes.InferenceForecastBundle{
+		InferenceForecastsBundle: &emissionstypes.InputInferenceForecastBundle{
 			Inference: nil,
 			Forecast:  nil,
 		},
@@ -442,7 +442,7 @@ func createForecasterDataBundle(
 		Pubkey:                             "",
 	}
 
-	workerDataBundle.InferenceForecastsBundle.Forecast = &emissionstypes.Forecast{
+	workerDataBundle.InferenceForecastsBundle.Forecast = &emissionstypes.InputForecast{
 		TopicId:          topicId,
 		BlockHeight:      blockHeight,
 		Forecaster:       forecaster.Addr,

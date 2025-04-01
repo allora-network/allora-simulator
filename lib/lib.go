@@ -14,7 +14,7 @@ import (
 )
 
 // Update this when the API version changes
-const ALLORA_API_VERSION = "v8"
+const ALLORA_API_VERSION = "v9"
 
 func GetAccountInfo(address string, config *types.Config) (seqint, accnum uint64, err error) {
 	resp, err := client.HTTPGet(config.Nodes.API + "/cosmos/auth/v1beta1/accounts/" + address)
@@ -72,6 +72,7 @@ func GetNextTopicId(config *types.Config) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 
 	var topicIdRes types.NextTopicIdResult
 	err = json.Unmarshal(resp, &topicIdRes)

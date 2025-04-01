@@ -20,9 +20,9 @@ type ResearchSimulationData struct {
 	RegisteredReputersByTopic    map[uint64][]*types.Actor
 	FailOnErr                    bool
 	Mu                           sync.RWMutex
-	InfererSimulatedValues       map[uint64]map[string]*alloramath.Dec
+	InfererSimulatedValues       map[uint64]map[string]*alloramath.BoundedExp40Dec
 	InfererOutperformers         map[uint64]string
-	ForecasterSimulatedValues    map[uint64]map[string][]*emissionstypes.ForecastElement
+	ForecasterSimulatedValues    map[uint64]map[string][]*emissionstypes.InputForecastElement
 	ForecasterOutperformers      map[uint64]string
 }
 
@@ -84,19 +84,19 @@ func (s *ResearchSimulationData) GetReputersForTopic(topicId uint64) []*types.Ac
 	return s.RegisteredReputersByTopic[topicId]
 }
 
-func (s *ResearchSimulationData) GetInfererSimulatedValues(topicId uint64) map[string]*alloramath.Dec {
+func (s *ResearchSimulationData) GetInfererSimulatedValues(topicId uint64) map[string]*alloramath.BoundedExp40Dec {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.InfererSimulatedValues[topicId]
 }
 
-func (s *ResearchSimulationData) GetInfererSimulatedValue(topicId uint64, addr string) *alloramath.Dec {
+func (s *ResearchSimulationData) GetInfererSimulatedValue(topicId uint64, addr string) *alloramath.BoundedExp40Dec {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.InfererSimulatedValues[topicId][addr]
 }
 
-func (s *ResearchSimulationData) GetForecasterSimulatedValue(topicId uint64, addr string) []*emissionstypes.ForecastElement {
+func (s *ResearchSimulationData) GetForecasterSimulatedValue(topicId uint64, addr string) []*emissionstypes.InputForecastElement {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
 	return s.ForecasterSimulatedValues[topicId][addr]
@@ -114,13 +114,13 @@ func (s *ResearchSimulationData) GetForecasterOutperformer(topicId uint64) strin
 	return s.ForecasterOutperformers[topicId]
 }
 
-func (s *ResearchSimulationData) SetInfererSimulatedValues(topicId uint64, values map[string]*alloramath.Dec) {
+func (s *ResearchSimulationData) SetInfererSimulatedValues(topicId uint64, values map[string]*alloramath.BoundedExp40Dec) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.InfererSimulatedValues[topicId] = values
 }
 
-func (s *ResearchSimulationData) SetForecasterSimulatedValues(topicId uint64, values map[string][]*emissionstypes.ForecastElement) {
+func (s *ResearchSimulationData) SetForecasterSimulatedValues(topicId uint64, values map[string][]*emissionstypes.InputForecastElement) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 	s.ForecasterSimulatedValues[topicId] = values
@@ -155,7 +155,7 @@ func (s *ResearchSimulationData) GenerateInfererSimulatedValuesForNextEpoch(conf
 	inferers := s.GetInferersForTopic(topicId)
 	s.SetInfererOutperformer(config, topicId, inferers)
 
-	infererSimulatedValues := map[string]*alloramath.Dec{}
+	infererSimulatedValues := map[string]*alloramath.BoundedExp40Dec{}
 	for _, inferer := range inferers {
 		outperformer := s.GetInfererOutperformer(topicId)
 		if inferer.Addr == outperformer {
@@ -208,7 +208,7 @@ func (s *ResearchSimulationData) GenerateForecasterSimulatedValuesForNextEpoch(
 		})
 	}
 
-	forecasterSimulatedValues := map[string][]*emissionstypes.ForecastElement{}
+	forecasterSimulatedValues := map[string][]*emissionstypes.InputForecastElement{}
 	for _, forecaster := range forecasters {
 		simulatedValue := GetForecasterOutput(
 			config,
