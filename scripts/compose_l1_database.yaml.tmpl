@@ -1,0 +1,21 @@
+  allora-db: # Indented by 2 spaces
+    image: ${POSTGRES_IMAGE_REF}
+    container_name: allora-db
+    networks:
+      local-net: # Must match the network defined in compose_l1_header.yaml
+        aliases:
+          - allora-db-alias # Service alias within the Docker network
+    ports:
+      - "${DB_HOST_PORT}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+    volumes:
+      - allora-db-data:/var/lib/postgresql/data # Docker-managed volume for persistence
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped 

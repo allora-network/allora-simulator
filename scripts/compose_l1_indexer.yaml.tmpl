@@ -1,0 +1,43 @@
+  allora-indexer-init:
+    image: ${INDEXER_IMAGE_REF}
+    platform: linux/amd64
+    container_name: allora-indexer-init
+    command:
+      - migrate
+      - up
+      - --CONNECTION=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@allora-db-alias:5432/${POSTGRES_DB_NAME}?sslmode=disable
+      - --NODE=http://${VALIDATOR_PREFIX}0:${VALIDATORS_RPC_PORT_START_INTERNAL}
+      - --MODE=empty
+      - --CHAIN_ID=${CHAIN_ID}
+    networks:
+      - local-net
+    depends_on:
+      allora-db:
+        condition: service_healthy
+    restart: on-failure
+
+  allora-indexer:
+    image: ${INDEXER_IMAGE_REF}
+    platform: linux/amd64
+    container_name: allora-indexer
+    environment:
+      - RUST_LOG=${RUST_LOG:-info,sqlx=warn}
+    command:
+      - --CONNECTION=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@allora-db-alias:5432/${POSTGRES_DB_NAME}?sslmode=disable
+      - --NODE=http://${VALIDATOR_PREFIX}0:${VALIDATORS_RPC_PORT_START_INTERNAL}
+      - --CHAIN_ID=${CHAIN_ID}
+      - --MODE=full
+      - --WORKERS_NUM=${WORKERS_NUM:-1}
+      - --MAX_CONCURRENT_TX_PROCESSING=${MAX_CONCURRENT_TX_PROCESSING:-32}
+    networks:
+      - local-net
+    ports:
+      - "${INDEXER_API_PORT}:3001"
+    depends_on:
+      allora-db:
+        condition: service_healthy
+      allora-indexer-init:
+        condition: service_completed_successfully
+      ${VALIDATOR_PREFIX}0:
+        condition: service_started
+    restart: unless-stopped 

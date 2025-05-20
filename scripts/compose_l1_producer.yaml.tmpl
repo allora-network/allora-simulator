@@ -1,0 +1,22 @@
+allora-producer:
+  image: ${PRODUCER_IMAGE_REF}
+  container_name: allora-producer
+  environment:
+    - ALLORA_PRODUCER_NODE_RPC_URL=http://${VALIDATOR_PREFIX}0:${VALIDATORS_RPC_PORT_START_INTERNAL} # Target validator0 internal RPC
+    - ALLORA_PRODUCER_INDEXER_URL=http://allora-indexer:3001 # Internal URL for the indexer
+    - ALLORA_PRODUCER_CHAIN_ID=${CHAIN_ID}
+    - ALLORA_PRODUCER_ACCOUNT_KEY_NAME=producer_key # Or a name you prefer
+    - ALLORA_PRODUCER_ACCOUNT_SEED_PHRASE=${PRODUCER_SEED_PHRASE}
+    - ALLORA_PRODUCER_LISTEN_ADDRESS=0.0.0.0:8000
+    - ALLORA_PRODUCER_LOG_LEVEL=INFO
+    # Add other necessary ALLORA_PRODUCER_* variables here
+  networks:
+    - local-net
+  ports:
+    - "${PRODUCER_API_PORT}:8000" # Expose producer API port
+  depends_on:
+    allora-indexer:
+      condition: service_started # Or service_healthy if indexer has a healthcheck
+    ${VALIDATOR_PREFIX}0:
+      condition: service_started # Or service_healthy
+  restart: unless-stopped 
