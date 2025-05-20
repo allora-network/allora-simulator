@@ -1,4 +1,4 @@
-.PHONY: setup stress research
+.PHONY: setup stress research localnet localnet-stop
 
 setup:
 	cp config.example.json config.json
@@ -11,19 +11,10 @@ stress:
 research:
 	go run cmd/research/main.go
 
-check-data:
-	@if [ -d "data" ]; then \
-		read -p "Data directory exists. Do you want to delete it? [y/N] " answer; \
-		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
-			rm -rf data/*; \
-			echo "Data directory cleaned"; \
-		else \
-			echo "Keeping existing data"; \
-		fi \
-	fi
+# Starts a local L1 testnet using a script
+localnet:
+	VALIDATOR_NUMBER=3 INDEXER=true ./scripts/local_testnet_l1.sh
 
-docker: check-data
-	docker compose up -d
-
-clean-docker:
-	docker compose down -v
+# Stops and cleans the local L1 testnet
+localnet-stop:
+	docker compose -f ./scripts/localnet/compose_l1.yaml down -v

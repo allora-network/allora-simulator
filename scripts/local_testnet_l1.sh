@@ -154,7 +154,7 @@ done
 
 echo "PEERS=$PEERS" >> ${ENV_L1}
 echo "Generate docker compose file"
-NETWORK_PREFIX=$NETWORK_PREFIX envsubst < compose_l1_header.yaml > $L1_COMPOSE
+NETWORK_PREFIX=$NETWORK_PREFIX envsubst < compose_header.yaml > $L1_COMPOSE
 
 for ((i=0; i<$VALIDATOR_NUMBER; i++)); do
     ipAddress="${NETWORK_PREFIX}.$((VALIDATORS_IP_START+i))" \
@@ -167,7 +167,7 @@ for ((i=0; i<$VALIDATOR_NUMBER; i++)); do
     APP_HOME=$APP_HOME \
     UID_GID=$UID_GID \
     DOCKER_IMAGE=$DOCKER_IMAGE \
-    envsubst < compose_l1_validator.yaml.tmpl >> $L1_COMPOSE
+    envsubst < compose_templates/validator.yaml.tmpl >> $L1_COMPOSE
 done
 
 if [ "$INDEXER" == "true" ]; then
@@ -177,17 +177,17 @@ if [ "$INDEXER" == "true" ]; then
   export INDEXER_IMAGE_REF VALIDATOR_PREFIX VALIDATORS_RPC_PORT_START_INTERNAL CHAIN_ID INDEXER_API_PORT
 
   printf "\\n" >> $L1_COMPOSE 
-  envsubst < compose_l1_database.yaml.tmpl >> $L1_COMPOSE
+  envsubst < compose_templates/database.yaml.tmpl >> $L1_COMPOSE
   
   printf "\\n" >> $L1_COMPOSE # Ensure separation
-  envsubst < compose_l1_indexer.yaml.tmpl >> $L1_COMPOSE
+  envsubst < compose_templates/indexer.yaml.tmpl >> $L1_COMPOSE
 
   if [ "$PRODUCER" == "true" ]; then
     echo "Adding Producer service to Docker Compose from template..."
-    export PRODUCER_IMAGE_REF PRODUCER_SEED_PHRASE PRODUCER_API_PORT # CHAIN_ID, VALIDATOR_PREFIX, VALIDATORS_RPC_PORT_START_INTERNAL already exported
+    export PRODUCER_IMAGE_REF PRODUCER_SEED_PHRASE PRODUCER_API_PORT
 
     printf "\\n" >> $L1_COMPOSE # Ensure separation
-    envsubst < compose_l1_producer.yaml.tmpl >> $L1_COMPOSE
+    envsubst < compose_templates/producer.yaml.tmpl >> $L1_COMPOSE
   fi
 fi
 

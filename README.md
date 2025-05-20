@@ -94,30 +94,55 @@ The setup command will:
 
 Choose one of these options:
 
-#### Option A: Using Docker Compose (New Local Chain)
-1. Create a local chain:
-   ```bash
-   make docker
-   ```
-2. The script will:
-   - Generate a faucet account
-   - Save the seedphrase in `scripts/seedphrase`
-   - Create a local chain with default parameters
+#### Option A: Setting up a New Local Testnet
 
-3. Update config.json for local chain:
-   ```json
-   {
-       "nodes": {
-           "rpc": ["http://127.0.0.1:26657"],
-           "api": "http://localhost:1317",
-           "grpc": "localhost:9090"
-       }
-   }
-   ```
+To start a new local testnet, use the `make localnet` command. This command utilizes the `./scripts/local_testnet_l1.sh` script to set up and run the network using Docker Compose.
 
-If you want to reset the data, you can run:
 ```bash
-make clean-docker
+make localnet
+```
+
+**Customizing the Testnet:**
+
+You can control the testnet configuration using environment variables:
+
+*   `VALIDATOR_NUMBER`: Specifies the number of validator nodes to create. For example, to start a testnet with 5 validators:
+    ```bash
+    VALIDATOR_NUMBER=5 make localnet
+    ```
+    If not set, it defaults to the script's internal default (e.g., 3 validators).
+
+*   `INDEXER`: Set to `true` to include an indexer service in the testnet. If enabled, one instance of the indexer will be started and connected to the first validator (`validator0`).
+    ```bash
+    INDEXER=true make localnet
+    ```
+
+*   `PRODUCER`: Set to `true` to include a producer service in the testnet. If enabled, one instance of the producer will be started.
+    ```bash
+    PRODUCER=true make localnet
+    ```
+
+You can combine these variables:
+```bash
+VALIDATOR_NUMBER=2 INDEXER=true PRODUCER=true make localnet
+```
+
+**Default Configuration:**
+
+The local testnet should be accessible via the default RPC/API/gRPC ports (e.g., `validator0` at `http://127.0.0.1:26657` for RPC). Ensure your `config.json` reflects this if you intend to connect the simulator to this localnet:
+```json
+{
+    "nodes": {
+        "rpc": ["http://127.0.0.1:26657"],
+        "api": "http://localhost:1317",
+        "grpc": "localhost:9090"
+    }
+}
+```
+
+To stop and clean up the local testnet (removing all associated Docker containers, networks, and volumes), run:
+```bash
+make localnet-stop
 ```
 
 #### Option B: Using Existing Chain
