@@ -96,7 +96,7 @@ Choose one of these options:
 
 #### Option A: Setting up a New Local Testnet
 
-To start a new local testnet, use the `make localnet` command. This command utilizes the `./scripts/local_testnet_l1.sh` script to set up and run the network using Docker Compose.
+To start a new local testnet, use the `make localnet` command. This command utilizes the `./scripts/local_testnet.sh` script to set up and run the network using Docker Compose.
 
 ```bash
 make localnet

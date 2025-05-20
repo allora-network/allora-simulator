@@ -13,7 +13,7 @@ research:
 
 # Starts a local L1 testnet using a script
 localnet:
-	VALIDATOR_NUMBER=3 INDEXER=true ./scripts/local_testnet_l1.sh
+	VALIDATOR_NUMBER=3 INDEXER=true ./scripts/local_testnet.sh
 
 # Stops and cleans the local L1 testnet
 localnet-stop:
