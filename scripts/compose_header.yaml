@@ -1,0 +1,13 @@
+networks:
+  local-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${NETWORK_PREFIX}.0/24
+
+volumes:
+  allora-db-data: {}
+
+services:
+  # Validator templates will be appended here first
+  # Then DB, Indexer, Producer templates
