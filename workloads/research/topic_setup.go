@@ -9,7 +9,7 @@ import (
 	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
-	"github.com/allora-network/allora-simulator/transaction"
+	"github.com/allora-network/allora-simulator/workloads/common"
 	"github.com/allora-network/allora-simulator/types"
 )
 
@@ -44,7 +44,7 @@ func CreateAndFundResearchTopic(
 		EnableReputerWhitelist:   false,
 	}
 
-	_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, request)
+	_, updatedSeq, err := common.SendDataWithRetry(actor.TxParams, true, request)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create topic: %w", err)
 	}
@@ -57,7 +57,7 @@ func CreateAndFundResearchTopic(
 		Amount:  math.NewInt(topicFunds),
 	}
 
-	_, updatedSeq, err = transaction.SendDataWithRetry(actor.TxParams, true, fundRequest)
+	_, updatedSeq, err = common.SendDataWithRetry(actor.TxParams, true, fundRequest)
 	if err != nil {
 		return 0, fmt.Errorf("failed to fund topic: %w", err)
 	}

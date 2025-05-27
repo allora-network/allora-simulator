@@ -6,8 +6,9 @@ type Config struct {
 	ChainID               string         `json:"chain_id"`
 	Denom                 string         `json:"denom"`
 	Prefix                string         `json:"prefix"`
-	GasPerByte            int64          `json:"gas_per_byte"`
-	BaseGas               int64          `json:"base_gas"`
+	GasPerByte            uint64          `json:"gas_per_byte"`
+	BaseGas               uint64          `json:"base_gas"`
+	GasAdjustment         float64        `json:"gas_adjustment"`
 	EpochLength           int64          `json:"epoch_length"`
 	NumTopics             int            `json:"num_topics"`
 	InferersPerTopic      int            `json:"inferers_per_topic"`
@@ -15,14 +16,8 @@ type Config struct {
 	ReputersPerTopic      int            `json:"reputers_per_topic"`
 	CreateTopicsSameBlock bool           `json:"create_topics_same_block"`
 	TimeoutMinutes        int64          `json:"timeout_minutes"`
-	Gas                   GasConfig      `json:"gas"`
 	Nodes                 NodesConfig    `json:"nodes"`
 	Research              ResearchConfig `json:"research"`
-}
-
-type GasConfig struct {
-	Low       int64 `json:"low"`
-	Precision int64 `json:"precision"`
 }
 
 type NodesConfig struct {

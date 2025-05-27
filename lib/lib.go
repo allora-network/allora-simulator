@@ -73,7 +73,6 @@ func GetNextTopicId(config *types.Config) (uint64, error) {
 		return 0, err
 	}
 
-
 	var topicIdRes types.NextTopicIdResult
 	err = json.Unmarshal(resp, &topicIdRes)
 	if err != nil {
