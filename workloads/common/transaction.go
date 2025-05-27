@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	cosmosmath "cosmossdk.io/math"
 	"github.com/allora-network/allora-simulator/client"
 	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/types"
@@ -57,19 +58,27 @@ func BuildAndSignTransaction(
 	// Apply adjustment safely
 	if txParams.Config.GasAdjustment > 0 {
 		gasFloat := float64(gas) * txParams.Config.GasAdjustment
-	if gasFloat < math.MaxUint64 {
-		gas = uint64(gasFloat)
-	} else {
+		if gasFloat < math.MaxUint64 {
+			gas = uint64(gasFloat)
+		} else {
 			gas = math.MaxUint64
 		}
 	}
 	txBuilder.SetGasLimit(gas)
 
-	// Calculate fee
-	minGasPrice := lib.GetCurrentGasPrice()
-	fees, err := CalculateFees(gas, minGasPrice)
-	if err != nil {
-		return nil, err
+	var fees cosmosmath.Int
+	if txParams.Config.OverrideFee > 0 {
+		// Set the gas price to the override value
+		fees = cosmosmath.NewIntFromUint64(txParams.Config.OverrideFee)
+		// Reset the override fee
+		txParams.Config.OverrideFee = 0
+	} else {
+		// Calculate fee
+		minGasPrice := lib.GetCurrentGasPrice()
+		fees, err = CalculateFees(gas, minGasPrice)
+		if err != nil {
+			return nil, err
+		}
 	}
 	feeCoin := sdktypes.NewCoin(txParams.Config.Denom, fees)
 	txBuilder.SetFeeAmount(sdktypes.NewCoins(feeCoin))
@@ -152,6 +161,24 @@ func SendDataWithRetry(
 			}
 			// if mempool is full, retry
 			if strings.Contains(err.Error(), "mempool is full") {
+				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
+				time.Sleep(delay)
+				continue
+			}
+			// if fee is too low, set override fee and retry
+			if strings.Contains(err.Error(), "insufficient fee") {
+				got, required, err := parseInsufficientFeeError(err.Error(), txParams.Config.Denom)
+				if err != nil {
+					log.Error().Msgf("Failed to parse insufficient fee error: %v", err)
+					continue
+				}
+				log.Debug().Msgf("Retrying tx with required fee, got %d, required %d", got, required)
+				if required > txParams.Config.MaxFees {
+					log.Error().Msgf("Required fee %d is greater than max fees %d", required, txParams.Config.MaxFees)
+					txParams.Config.OverrideFee = txParams.Config.MaxFees
+				} else {
+					txParams.Config.OverrideFee = required
+				}
 				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
 				time.Sleep(delay)
 				continue

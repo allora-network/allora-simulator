@@ -3,6 +3,8 @@ package common
 import (
 	"fmt"
 	"math"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/allora-network/allora-simulator/lib"
@@ -54,6 +56,30 @@ func CalculateFees(gas uint64, minGasPrice float64) (cosmossdk_io_math.Int, erro
 	fee := cosmossdk_io_math.NewIntFromUint64(uintFee)
 
 	return fee, nil
+}
+
+// Extract got and required fee values from insufficient fee error message
+func parseInsufficientFeeError(errorMessage, denom string) (got uint64, required uint64, err error) {
+	// Escape denom in case it contains special regex characters
+	escapedDenom := regexp.QuoteMeta(denom)
+	// Updated regex to handle the longer error format
+	re := regexp.MustCompile(fmt.Sprintf(`got:\s*(\d+)%s\s*required:\s*(\d+)%s`, escapedDenom, escapedDenom))
+	matches := re.FindStringSubmatch(errorMessage)
+
+	if len(matches) == 3 {
+		got, err := strconv.ParseUint(matches[1], 10, 64)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to parse got fee: %w", err)
+		}
+
+		required, err := strconv.ParseUint(matches[2], 10, 64)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to parse required fee: %w", err)
+		}
+
+		return got, required, nil
+	}
+	return 0, 0, fmt.Errorf("fee values not found in error message")
 }
 
 // Update the gas price periodically

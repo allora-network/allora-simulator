@@ -1,6 +1,9 @@
 package types
 
-import "strconv"
+import (
+	"strconv"
+
+)
 
 type Config struct {
 	ChainID               string         `json:"chain_id"`
@@ -9,6 +12,8 @@ type Config struct {
 	GasPerByte            uint64          `json:"gas_per_byte"`
 	BaseGas               uint64          `json:"base_gas"`
 	GasAdjustment         float64        `json:"gas_adjustment"`
+	OverrideFee           uint64         `json:"override_fee"`
+	MaxFees               uint64         `json:"max_fees"`
 	EpochLength           int64          `json:"epoch_length"`
 	NumTopics             int            `json:"num_topics"`
 	InferersPerTopic      int            `json:"inferers_per_topic"`
