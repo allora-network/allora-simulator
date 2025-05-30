@@ -186,6 +186,49 @@ Use this to:
 - Run controlled experiments
 - Simulate specific market conditions
 
+### Step 3 - Chaos Testing with Pumba (Optional)
+
+After starting your local testnet (`make localnet`), you can inject network disturbances into validator nodes using Pumba.
+
+For more information about Pumba, see the official repository: https://github.com/alexei-led/pumba
+
+You can customize the Pumba tests using the following make variables:
+
+- `CHAOS_TARGETS`: Specifies one or more target validator containers, separated by spaces (e.g., "validator0 validator1").
+- `DURATION_S`: Duration of the Pumba effect in seconds.
+- `LOSS_PERCENT`: Percentage of packet loss (0-100) for chaos-loss.
+- `DELAY_MS`: Network delay in milliseconds for chaos-delay.
+
+#### Available Chaos Commands
+
+**Inject Packet Loss (chaos-loss):**
+Simulates a percentage of network packets being lost for the target validator(s).
+
+```bash
+# Target validator0 with 10% loss for 60s (defaults)
+make chaos-loss
+
+# Target validator1 with 30% loss for 120s
+make chaos-loss CHAOS_TARGETS=validator1 LOSS_PERCENT=30 DURATION_S=120
+
+# Target validator0 and validator2 with 50% loss for 60s
+make chaos-loss CHAOS_TARGETS="validator0 validator2" LOSS_PERCENT=50
+```
+
+**Add Network Delay (chaos-delay):**
+Simulates network latency for the target validator(s).
+
+```bash
+# Target validator0 with 200ms delay for 60s (defaults)
+make chaos-delay
+
+# Target validator1 with 500ms delay for 30s
+make chaos-delay CHAOS_TARGETS=validator1 DELAY_MS=500 DURATION_S=30
+
+# Target validator0 and validator2 with 1000ms delay for 60s
+make chaos-delay CHAOS_TARGETS="validator0 validator2" DELAY_MS=1000
+```
+
 ## Module Differences
 
 ### Stress Module
