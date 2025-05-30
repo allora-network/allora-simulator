@@ -42,9 +42,3 @@ chaos-delay:
 	@echo "Adding $(DELAY_MS)ms network delay to [$(CHAOS_TARGETS)] for $(DURATION_S) seconds..."
 	docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock gaiaadm/pumba netem --duration $(DURATION_S)s --tc-image ghcr.io/alexei-led/pumba-alpine-nettools:latest delay --time $(DELAY_MS) $(CHAOS_TARGETS)
 	@echo "Network delay injection finished for [$(CHAOS_TARGETS)]."
-
-# Stop (pause) CHAOS_TARGETS
-chaos-stop:
-	@echo "Stopping (pausing) [$(CHAOS_TARGETS)] for $(DURATION_S) seconds..."
-	docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock gaiaadm/pumba stop --duration $(DURATION_S)s $(CHAOS_TARGETS)
-	@echo "Stop of [$(CHAOS_TARGETS)] finished. They should resume now."
