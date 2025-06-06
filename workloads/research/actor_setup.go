@@ -2,15 +2,15 @@ package research
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"sync"
 	"sync/atomic"
+
+	"github.com/rs/zerolog/log"
 
 	cosmosmath "cosmossdk.io/math"
 	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
-	"github.com/allora-network/allora-simulator/transaction"
 	"github.com/allora-network/allora-simulator/types"
 	"github.com/allora-network/allora-simulator/workloads/common"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
@@ -167,7 +167,7 @@ func fundActors(
 			Outputs: outputs,
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(sender.TxParams, true, sendMsg)
+		_, updatedSeq, err := common.SendDataWithRetry(sender.TxParams, true, sendMsg)
 		if err != nil {
 			log.Error().Msgf("Error sending worker registration: %v", err.Error())
 			return err
@@ -249,7 +249,7 @@ func RegisterWorkers(
 				TopicId:   topicId,
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.TxParams, false, request)
+			_, updatedSeq, err := common.SendDataWithRetry(worker.TxParams, false, request)
 			if err != nil {
 				log.Error().Msgf("Error sending worker registration: %v", err.Error())
 				return
@@ -319,7 +319,7 @@ func RegisterReputersAndStake(
 				Amount:  cosmosmath.NewIntFromUint64(stakeToAdd),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, true, registerRequest, stakeRequest)
+			_, updatedSeq, err := common.SendDataWithRetry(reputer.TxParams, true, registerRequest, stakeRequest)
 			if err != nil {
 				log.Error().Msgf("Error sending reputer stake: %v", err.Error())
 				return

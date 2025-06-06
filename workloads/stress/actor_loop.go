@@ -11,8 +11,8 @@ import (
 	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
-	"github.com/allora-network/allora-simulator/transaction"
 	"github.com/allora-network/allora-simulator/types"
+	"github.com/allora-network/allora-simulator/workloads/common"
 	"github.com/rs/zerolog/log"
 )
 
@@ -23,16 +23,23 @@ func StartActorLoops(
 ) error {
 	log.Info().Msgf("Starting submission loop for %d topics", len(topicIds))
 
-	totalRoutines := len(topicIds) * 2 // 2 routines per topic (worker + reputer)
+	totalRoutines := len(topicIds)*2 + 1 // 2 routines per topic (worker + reputer) + 1 for gas routine
 	errChan := make(chan error, totalRoutines)
 
 	// Create wait group to track all goroutines
 	var wg sync.WaitGroup
 	wg.Add(totalRoutines)
 
+	// Run gas routine
+	go func() {
+		defer wg.Done()
+		common.RunGasRoutine(config)
+	}()
+
 	// For each topic, start a worker routine and a reputer routine
 	for _, topicId := range topicIds {
 		log.Info().Msgf("Starting submission loop for topic: %d", topicId)
+
 		// Start worker routine
 		go func(tid uint64) {
 			defer wg.Done()
@@ -191,7 +198,7 @@ func createAndSendWorkerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.TxParams, false, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := common.SendDataWithRetry(worker.TxParams, false, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           worker.Addr,
 				WorkerDataBundle: workerData,
 			})
@@ -306,7 +313,7 @@ func createAndSendReputerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, false, &emissionstypes.InsertReputerPayloadRequest{
+			_, updatedSeq, err := common.SendDataWithRetry(reputer.TxParams, false, &emissionstypes.InsertReputerPayloadRequest{
 				Sender:             reputer.Addr,
 				ReputerValueBundle: valueBundle,
 			})

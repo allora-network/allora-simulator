@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
-	"github.com/allora-network/allora-simulator/transaction"
+	"github.com/allora-network/allora-simulator/workloads/common"
 	"github.com/allora-network/allora-simulator/types"
 )
 
@@ -21,7 +21,7 @@ func ConfigureChainParams(actor *types.Actor, config *types.Config) error {
 		},
 	}
 
-	_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, updateParamRequest)
+	_, updatedSeq, err := common.SendDataWithRetry(actor.TxParams, true, updateParamRequest)
 	if err != nil {
 		return fmt.Errorf("failed to update chain parameters: %w", err)
 	}

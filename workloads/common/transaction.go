@@ -1,24 +1,138 @@
-package transaction
+package common
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 
+	cosmosmath "cosmossdk.io/math"
 	"github.com/allora-network/allora-simulator/client"
+	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	"github.com/rs/zerolog/log"
 )
 
 var cdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
+
+func BuildAndSignTransaction(
+	ctx context.Context,
+	txParams *types.TransactionParams,
+	sequence uint64,
+	encodingConfig moduletestutil.TestEncodingConfig,
+	msgs ...sdktypes.Msg,
+) ([]byte, error) {
+	// Create a new TxBuilder
+	txBuilder := encodingConfig.TxConfig.NewTxBuilder()
+
+	var memo string
+
+	// Construct the message based on the message type
+	var err error
+
+	// Set the message and other transaction parameters
+	if err := txBuilder.SetMsgs(msgs...); err != nil {
+		return nil, err
+	}
+
+	// Estimate gas limit
+	totalTxSize := 0
+	for _, msg := range msgs {
+		totalTxSize += len(msg.String())
+	}
+	gas, err := EstimateGas(totalTxSize, txParams.Config)
+	if err != nil {
+		return nil, err
+	}
+	// Apply adjustment safely
+	if txParams.Config.GasAdjustment > 0 {
+		gasFloat := float64(gas) * txParams.Config.GasAdjustment
+		if gasFloat < math.MaxUint64 {
+			gas = uint64(gasFloat)
+		} else {
+			gas = math.MaxUint64
+		}
+	}
+	txBuilder.SetGasLimit(gas)
+
+	var fees cosmosmath.Int
+	if txParams.Config.OverrideFee > 0 {
+		// Set the gas price to the override value
+		fees = cosmosmath.NewIntFromUint64(txParams.Config.OverrideFee)
+		// Reset the override fee
+		txParams.Config.OverrideFee = 0
+	} else {
+		// Calculate fee
+		minGasPrice := lib.GetCurrentGasPrice()
+		fees, err = CalculateFees(gas, minGasPrice)
+		if err != nil {
+			return nil, err
+		}
+	}
+	feeCoin := sdktypes.NewCoin(txParams.Config.Denom, fees)
+	txBuilder.SetFeeAmount(sdktypes.NewCoins(feeCoin))
+
+	// Set memo and timeout height
+	txBuilder.SetMemo(memo)
+	txBuilder.SetTimeoutHeight(0)
+
+	// Set up signature
+	sigV2 := signing.SignatureV2{
+		PubKey:   txParams.PubKey,
+		Sequence: sequence,
+		Data: &signing.SingleSignatureData{
+			SignMode: signing.SignMode_SIGN_MODE_DIRECT,
+		},
+	}
+
+	if err := txBuilder.SetSignatures(sigV2); err != nil {
+		return nil, err
+	}
+
+	signerData := authsigning.SignerData{
+		ChainID:       txParams.Config.ChainID,
+		AccountNumber: txParams.AccNum,
+		Sequence:      sequence,
+	}
+
+	// Sign the transaction with the private key
+	sigV2, err = tx.SignWithPrivKey(
+		ctx,
+		signing.SignMode_SIGN_MODE_DIRECT,
+		signerData,
+		txBuilder,
+		txParams.PrivKey,
+		encodingConfig.TxConfig,
+		sequence,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the signed signature back to the txBuilder
+	if err := txBuilder.SetSignatures(sigV2); err != nil {
+		return nil, err
+	}
+
+	// Encode the transaction
+	txBytes, err := encodingConfig.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	return txBytes, nil
+}
 
 // Loop handles the main transaction broadcasting logic
 func SendDataWithRetry(
@@ -27,13 +141,11 @@ func SendDataWithRetry(
 	msgs ...sdktypes.Msg,
 ) (*coretypes.ResultBroadcastTx, uint64, error) {
 	sequence := txParams.Sequence
-	maxRetries := int64(5)
-	retryDelay := int64(4)
 
 	for retryCount := int64(0); retryCount <= maxRetries; retryCount++ {
 		currentSequence := sequence
 
-		resp, _, err := SendTransactionViaRPC(txParams, currentSequence, waitForTx, msgs...)
+		resp, _, err := sendTransactionViaRPC(txParams, currentSequence, waitForTx, msgs...)
 		if err != nil {
 			log.Error().Msgf("Transaction failed: %v", err)
 			log.Info().Msgf("Handling error and retrying...")
@@ -49,6 +161,24 @@ func SendDataWithRetry(
 			}
 			// if mempool is full, retry
 			if strings.Contains(err.Error(), "mempool is full") {
+				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
+				time.Sleep(delay)
+				continue
+			}
+			// if fee is too low, set override fee and retry
+			if strings.Contains(err.Error(), "insufficient fee") {
+				got, required, err := parseInsufficientFeeError(err.Error(), txParams.Config.Denom)
+				if err != nil {
+					log.Error().Msgf("Failed to parse insufficient fee error: %v", err)
+					continue
+				}
+				log.Debug().Msgf("Retrying tx with required fee, got %d, required %d", got, required)
+				if required > txParams.Config.MaxFees {
+					log.Error().Msgf("Required fee %d is greater than max fees %d", required, txParams.Config.MaxFees)
+					txParams.Config.OverrideFee = txParams.Config.MaxFees
+				} else {
+					txParams.Config.OverrideFee = required
+				}
 				delay := calculateLinearBackoffDelay(retryDelay, retryCount+1)
 				time.Sleep(delay)
 				continue
@@ -81,8 +211,8 @@ func SendDataWithRetry(
 	return nil, sequence, nil
 }
 
-// SendTransactionViaRPC sends a transaction using the provided TransactionParams and sequence number.
-func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, waitForTx bool, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, string, error) {
+// sendTransactionViaRPC sends a transaction using the provided TransactionParams and sequence number.
+func sendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, waitForTx bool, msgs ...sdktypes.Msg) (*coretypes.ResultBroadcastTx, string, error) {
 	encodingConfig := moduletestutil.MakeTestEncodingConfig()
 	encodingConfig.Codec = cdc
 
@@ -95,7 +225,7 @@ func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, w
 	}
 
 	// Broadcast the transaction via RPC
-	resp, err := Transaction(txBytes, txParams.Config.Nodes.RPC[0], waitForTx)
+	resp, err := broadcastTransaction(txBytes, txParams.Config.Nodes.RPC[0], waitForTx)
 	if err != nil {
 		return resp, string(txBytes), fmt.Errorf("failed to broadcast transaction: %w", err)
 	}
@@ -103,8 +233,8 @@ func SendTransactionViaRPC(txParams *types.TransactionParams, sequence uint64, w
 	return resp, string(txBytes), nil
 }
 
-// Transaction broadcasts the transaction bytes to the given RPC endpoint.
-func Transaction(txBytes []byte, rpcEndpoint string, waitForTx bool) (*coretypes.ResultBroadcastTx, error) {
+// broadcastTransaction broadcasts the transaction bytes to the given RPC endpoint.
+func broadcastTransaction(txBytes []byte, rpcEndpoint string, waitForTx bool) (*coretypes.ResultBroadcastTx, error) {
 	client, err := client.GetClient(rpcEndpoint)
 	if err != nil {
 		return nil, err
@@ -124,7 +254,7 @@ func handleSequenceMismatch(txParams *types.TransactionParams, sequence uint64, 
 		return nil, sequence, nil
 	}
 
-	resp, _, err := SendTransactionViaRPC(txParams, expectedSeq, waitForTx, msgs...)
+	resp, _, err := sendTransactionViaRPC(txParams, expectedSeq, waitForTx, msgs...)
 	if err != nil {
 		return nil, expectedSeq, err
 	}
