@@ -10,8 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
+	"github.com/allora-network/allora-simulator/workloads/common"
 	"github.com/allora-network/allora-simulator/lib"
-	"github.com/allora-network/allora-simulator/transaction"
 	"github.com/allora-network/allora-simulator/types"
 )
 
@@ -22,11 +22,17 @@ func StartActorLoops(
 ) error {
 	log.Info().Msgf("Starting submission loop for %d topics", len(topicIds))
 
-	totalRoutines := len(topicIds) * 2 // 2 routines per topic (worker + reputer)
+	totalRoutines := len(topicIds)*2 + 1 // 2 routines per topic (worker + reputer) + 1 for gas routine
 	errChan := make(chan error, totalRoutines)
 
 	var wg sync.WaitGroup
 	wg.Add(totalRoutines)
+
+	// Run gas routine
+	go func() {
+		defer wg.Done()
+		common.RunGasRoutine(config)
+	}()
 
 	for _, topicId := range topicIds {
 		log.Info().Msgf("Starting submission loop for topic: %d", topicId)
@@ -212,7 +218,7 @@ func createAndSendInfererPayloads(
 				log.Error().Msgf("Error creating inferer data bundle: %v", err.Error())
 				return
 			}
-			_, updatedSeq, err := transaction.SendDataWithRetry(inferer.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := common.SendDataWithRetry(inferer.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           inferer.Addr,
 				WorkerDataBundle: infererData,
 			})
@@ -306,7 +312,7 @@ func createAndSendReputerPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, true, &emissionstypes.InsertReputerPayloadRequest{
+			_, updatedSeq, err := common.SendDataWithRetry(reputer.TxParams, true, &emissionstypes.InsertReputerPayloadRequest{
 				Sender:             reputer.Addr,
 				ReputerValueBundle: valueBundle,
 			})
@@ -404,7 +410,7 @@ func createAndSendForecasterPayloads(
 				return
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(forecaster.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
+			_, updatedSeq, err := common.SendDataWithRetry(forecaster.TxParams, true, &emissionstypes.InsertWorkerPayloadRequest{
 				Sender:           forecaster.Addr,
 				WorkerDataBundle: workerData,
 			})

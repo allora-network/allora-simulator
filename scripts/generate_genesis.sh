@@ -83,8 +83,8 @@ for ((i=0; i<$VALIDATOR_NUMBER; i++)); do
     # Configure config.toml for this validator
     dasel put -t string -v "kv" 'tx_index.indexer' -f $valHome/config/config.toml
     dasel put -t string -v "*:error,p2p:info,state:info,x/feemarket:error" 'log_level' -f $valHome/config/config.toml
-    dasel put mempool.max_txs_bytes -t int -v 2097152 -f $valHome/config/config.toml
-    dasel put mempool.size -t int -v 1000 -f $valHome/config/config.toml
+    dasel put mempool.max_txs_bytes -t int -v 33554432 -f $valHome/config/config.toml
+    dasel put mempool.size -t int -v 5000 -f $valHome/config/config.toml
     
     # Configure app.toml for this validator
     dasel put telemetry.enabled -t bool -v true -f $valHome/config/app.toml

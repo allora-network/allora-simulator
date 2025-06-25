@@ -10,7 +10,7 @@ import (
 	cosmosmath "cosmossdk.io/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
-	"github.com/allora-network/allora-simulator/transaction"
+	
 	"github.com/allora-network/allora-simulator/types"
 	"github.com/allora-network/allora-simulator/workloads/common"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
@@ -120,7 +120,7 @@ func fundActors(
 	targets []*types.Actor,
 	amount cosmosmath.Int,
 ) error {
-	batchSize := 2000
+	batchSize := 1000
 	completed := atomic.Int32{}
 
 	log.Info().Msgf("Starting funding of %d actors", len(targets))
@@ -162,7 +162,7 @@ func fundActors(
 			Outputs: outputs,
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(sender.TxParams, true, sendMsg)
+		_, updatedSeq, err := common.SendDataWithRetry(sender.TxParams, true, sendMsg)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error sending worker registration: %v", err.Error())
 			return err
@@ -243,7 +243,7 @@ func RegisterWorkers(
 				TopicId:   topicId,
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(worker.TxParams, false, request)
+			_, updatedSeq, err := common.SendDataWithRetry(worker.TxParams, false, request)
 			if err != nil {
 				log.Error().Err(err).Msgf("Error sending worker registration: %v", err.Error())
 				return
@@ -305,7 +305,7 @@ func RegisterReputersAndStake(
 				Amount:  cosmosmath.NewIntFromUint64(stakeToAdd),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(reputer.TxParams, true, registerRequest, stakeRequest)
+			_, updatedSeq, err := common.SendDataWithRetry(reputer.TxParams, true, registerRequest, stakeRequest)
 			if err != nil {
 				log.Error().Err(err).Msgf("Error sending reputer stake: %v", err.Error())
 				return

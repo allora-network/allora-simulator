@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/lib/logger"
 	"github.com/allora-network/allora-simulator/types"
 	"github.com/allora-network/allora-simulator/workloads/stress"
@@ -36,16 +37,28 @@ func main() {
 	sdkConfig.SetBech32PrefixForConsensusNode(config.Prefix+"valcons", config.Prefix+"valconspub")
 	sdkConfig.Seal()
 
+	// Calculate total number of actors
 	workersPerTopic := config.InferersPerTopic + config.ForecastersPerTopic
 	numActors := (workersPerTopic + config.ReputersPerTopic) * config.NumTopics
+
+	// Set initial gas price before sending any transactions
+	gasPrice, err := lib.GetGasPrice(&config)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Error getting base fee: %v", err)
+	}
+	lib.SetCurrentGasPrice(gasPrice)
+
+	log.Info().Msgf("Creating and funding %d actors...", numActors)
 	faucet, simulationData := stress.CreateAndFundActors(
 		&config,
 		mnemonic,
 		numActors,
 		config.EpochLength,
 	)
+	log.Info().Msgf("Successfully created and funded all actors")
 
 	// Create topics
+	log.Info().Msgf("Creating %d topics...", config.NumTopics)
 	topicIds, err := stress.CreateTopics(
 		faucet,
 		config.NumTopics,
@@ -55,6 +68,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to create topics: %v", err)
 	}
+	log.Info().Msgf("Successfully created %d topics", config.NumTopics)
 
 	// Calculate actors per topic
 	actorsPerTopic := workersPerTopic + config.ReputersPerTopic

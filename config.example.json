@@ -4,6 +4,8 @@
     "prefix": "allo",
     "gas_per_byte": 100,
     "base_gas": 1000000000,
+    "gas_adjustment": 1.5,
+    "override_fee": 0,
     "epoch_length": 12,
     "num_topics": 1,
     "inferers_per_topic": 5,
@@ -11,10 +13,6 @@
     "reputers_per_topic": 3,
     "create_topics_same_block": false,
     "timeout_minutes": 30,
-    "gas": {
-      "low": 25,
-      "precision": 1
-    },
     "nodes": {
       "rpc": ["http://127.0.0.1:26657"],
       "api": "http://localhost:1317",

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/allora-network/allora-simulator/lib"
 	"github.com/allora-network/allora-simulator/lib/logger"
 	"github.com/allora-network/allora-simulator/types"
 	"github.com/allora-network/allora-simulator/workloads/research"
@@ -39,8 +40,16 @@ func main() {
 	sdkConfig.SetBech32PrefixForConsensusNode(config.Prefix+"valcons", config.Prefix+"valconspub")
 	sdkConfig.Seal()
 
-	// Calculate total number of actors needed
+	// Calculate total number of actors
 	totalActors := config.InferersPerTopic + config.ForecastersPerTopic + config.ReputersPerTopic
+
+	// Set initial gas price before sending any transactions
+	gasPrice, err := lib.GetGasPrice(&config)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Error getting base fee: %v", err)
+	}
+	lib.SetCurrentGasPrice(gasPrice)
+
 	log.Info().Msgf("Creating and funding %d actors...", totalActors)
 	faucet, simulationData := research.CreateAndFundActors(
 		&config,

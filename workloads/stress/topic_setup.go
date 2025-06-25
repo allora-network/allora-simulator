@@ -11,7 +11,7 @@ import (
 	alloramath "github.com/allora-network/allora-chain/math"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/allora-network/allora-simulator/lib"
-	"github.com/allora-network/allora-simulator/transaction"
+	"github.com/allora-network/allora-simulator/workloads/common"
 	"github.com/allora-network/allora-simulator/types"
 	proto "github.com/cosmos/gogoproto/proto"
 )
@@ -64,7 +64,7 @@ func CreateTopics(
 			protoMsgs[i] = req
 		}
 
-		_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, false, protoMsgs...)
+		_, updatedSeq, err := common.SendDataWithRetry(actor.TxParams, false, protoMsgs...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to broadcast create topic requests: %w", err)
 		}
@@ -93,7 +93,7 @@ func CreateTopics(
 				ActiveReputerQuantile:    alloramath.MustNewDecFromString("0.2"),
 			}
 
-			_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, request)
+			_, updatedSeq, err := common.SendDataWithRetry(actor.TxParams, true, request)
 			if err != nil {
 				return nil, fmt.Errorf("failed to broadcast create topic request %d: %w", i, err)
 			}
@@ -133,7 +133,7 @@ func FundTopics(
 		protoMsgs[i] = req
 	}
 
-	_, updatedSeq, err := transaction.SendDataWithRetry(actor.TxParams, true, protoMsgs...)
+	_, updatedSeq, err := common.SendDataWithRetry(actor.TxParams, true, protoMsgs...)
 	if err != nil {
 		return fmt.Errorf("failed to broadcast fund topic requests: %w", err)
 	}
