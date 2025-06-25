@@ -26,10 +26,14 @@ localnet-stop:
 	docker compose -f ./scripts/localnet/compose_l1.yaml down -v
 
 # --- CHAOS TESTING TARGETS ---
-CHAOS_TARGETS  ?= validator0  # Target validator(s), space-separated (e.g., "validator0 validator1")
-DURATION_S     ?= 60         # Duration of the chaos effect in seconds
-LOSS_PERCENT   ?= 10         # Packet loss percentage (0-100)
-DELAY_MS       ?= 200        # Network delay in milliseconds
+# Target validator(s), space-separated (e.g., "validator0 validator1")
+CHAOS_TARGETS  ?=validator0 
+# Duration of the chaos effect in seconds
+DURATION_S     ?=60
+# Packet loss percentage (0-100)
+LOSS_PERCENT   ?=10
+# Network delay in milliseconds
+DELAY_MS       ?=200
 
 # Inject packet loss into CHAOS_TARGETS
 chaos-loss:
