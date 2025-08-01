@@ -2,9 +2,10 @@
 
 ## Overview
 
-The Allora Simulator provides two main modules:
+The Allora Simulator provides three main modules:
 - **Stress Module**: Tests network performance and correctness under various conditions
 - **Research Module**: Simulates specific scenarios with controlled parameters for research purposes
+- **Basic Activity**: Simulates basic network activity such as sending tokens
 
 ## Prerequisites
 
@@ -85,6 +86,24 @@ The setup command will:
             "max_samples_to_scale_scores": 10
         }
     }
+}
+```
+
+#### Basic Activity Module Parameters
+```json
+{
+  "basic_activity": {
+    "num_actors": 15,
+    "rand_wallet_seed": 12345,
+    "txs_per_block": {
+      "min": 5,
+      "max": 10
+    },
+    "send_amount": {
+      "min": "1000000000000000000",
+      "max": "15000000000000000000"
+    }
+  }
 }
 ```
 
@@ -186,6 +205,13 @@ Use this to:
 - Run controlled experiments
 - Simulate specific market conditions
 
+#### Basic Activity Module
+```bash
+make basic
+```
+Use this to:
+- Simulate sending tokens between accounts
+
 ### Step 3 - Chaos Testing with Pumba (Optional)
 
 After starting your local testnet (`make localnet`), you can inject network disturbances into validator nodes using Pumba.
@@ -243,3 +269,8 @@ make chaos-delay CHAOS_TARGETS="validator0 validator2" DELAY_MS=1000
 - Uses sophisticated price simulation
 - Tracks actor experience and performance
 - Supports outperformance scenarios
+
+### Basic Activity Module
+- Creates deterministic random wallets
+- Send random amount of txs per block according to the configured range
+- Send random number of tokens per tx according to the configured range
