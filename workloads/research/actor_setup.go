@@ -1,6 +1,7 @@
 package research
 
 import (
+	"io"
 	"sync"
 	"sync/atomic"
 
@@ -20,11 +21,12 @@ func CreateAndFundActors(
 	faucetMnemonic []byte,
 	numActors int,
 	epochLength int64,
+	rand io.Reader,
 ) (
 	faucet *types.Actor,
 	simulationData *ResearchSimulationData,
 ) {
-	faucet, actorsList := common.CreateAndFundActors(config, faucetMnemonic, numActors)
+	faucet, actorsList, _ := common.CreateAndFundActors(config, faucetMnemonic, numActors, rand)
 
 	data := ResearchSimulationData{
 		Faucet:                       faucet,

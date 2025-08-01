@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"io"
 	"sync/atomic"
 
 	cosmosmath "cosmossdk.io/math"
@@ -16,14 +17,16 @@ func CreateAndFundActors(
 	config *types.Config,
 	faucetMnemonic []byte,
 	numActors int,
+	rand io.Reader,
 ) (
 	faucet *types.Actor,
 	actorsList []*types.Actor,
+	preFundAmount cosmosmath.Int,
 ) {
 	var err error
 	// fund all actors from the faucet with some amount
 	// give everybody the same amount of money to start with
-	actorsList = createActors(numActors, config)
+	actorsList = createActors(numActors, config, rand)
 
 	privKey, pubKey, faucetAddr := GetPrivKey(config.Prefix, faucetMnemonic)
 
@@ -38,7 +41,7 @@ func CreateAndFundActors(
 			PubKey:   pubKey,
 		},
 	}
-	preFundAmount, err := getPreFundAmount(faucet, numActors)
+	preFundAmount, err = getPreFundAmount(faucet, numActors)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to get pre-fund amount")
 	}
@@ -66,13 +69,13 @@ func CreateAndFundActors(
 		}
 	}
 
-	return faucet, actorsList
+	return
 }
 
 // Create a new actor and register them in the node's account registry
-func createNewActor(numActors int, config *types.Config) *types.Actor {
+func createNewActor(numActors int, config *types.Config, rand io.Reader) *types.Actor {
 	actorName := types.GetActorName(numActors)
-	privKey, pubKey, address := GeneratePrivKey()
+	privKey, pubKey, address := GeneratePrivKey(rand)
 
 	return &types.Actor{
 		Name: actorName,
@@ -88,10 +91,10 @@ func createNewActor(numActors int, config *types.Config) *types.Actor {
 }
 
 // Create a list of actors both as a map and a slice, returns both
-func createActors(numToCreate int, config *types.Config) []*types.Actor {
+func createActors(numToCreate int, config *types.Config, rand io.Reader) []*types.Actor {
 	actorsList := make([]*types.Actor, numToCreate)
 	for i := 0; i < numToCreate; i++ {
-		actorsList[i] = createNewActor(i, config)
+		actorsList[i] = createNewActor(i, config, rand)
 	}
 	return actorsList
 }
