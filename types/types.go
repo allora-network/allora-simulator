@@ -1,6 +1,9 @@
 package types
 
 import (
+	cryptorand "crypto/rand"
+	"math/big"
+	"math/rand/v2"
 	"strconv"
 
 	"cosmossdk.io/math"
@@ -215,7 +218,37 @@ type BasicActivityConfig struct {
 	SendAmount     Range[math.Int] `json:"send_amount"`
 }
 
-type Range[T any] struct {
+type Range[T intType] struct {
 	Min T `json:"min"`
 	Max T `json:"max"`
+}
+
+type intType interface {
+	uint32 | math.Int
+}
+
+func (rng Range[T]) RandInBetween() T {
+	var t T
+	tAny := any(t)
+	switch tAny.(type) {
+	case math.Int:
+		lo := any(rng.Min).(math.Int).BigInt()
+		hi := any(rng.Max).(math.Int).BigInt()
+
+		n := new(big.Int).Sub(hi, lo)
+		n = n.Add(n, big.NewInt(1))
+		r, err := cryptorand.Int(cryptorand.Reader, n)
+		if err != nil {
+			panic(err)
+		}
+		r = r.Add(r, lo)
+
+		return any(math.NewIntFromBigInt(r)).(T)
+	case uint32:
+		lo := any(rng.Min).(uint32)
+		hi := any(rng.Max).(uint32)
+		return any(rand.N(hi-lo+1) + lo).(T)
+	default:
+		panic("unsupported type for Range")
+	}
 }
