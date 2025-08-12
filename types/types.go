@@ -216,6 +216,7 @@ type BasicActivityConfig struct {
 	RandWalletSeed int64           `json:"rand_wallet_seed"`
 	TxsPerBlock    Range[uint32]   `json:"txs_per_block"`
 	SendAmount     Range[math.Int] `json:"send_amount"`
+	RefundAmount   math.Int        `json:"refund_amount"`
 }
 
 type Range[T intType] struct {
