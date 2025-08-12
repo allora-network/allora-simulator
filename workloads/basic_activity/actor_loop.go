@@ -59,7 +59,14 @@ func sendTx(config *types.Config, state *State, wg *sync.WaitGroup, actor *types
 	log.Info().Str("from", actor.Addr).Str("to", msg.ToAddress).Str("amount", msg.Amount.String()).Msg("Sending transaction")
 	res, updatedSeq, err := common.SendDataWithRetry(actor.TxParams, true, &msg)
 	if err != nil {
-		log.Err(err).Str("addr", actor.Addr).Str("amount", msg.Amount.String()).Msg("Could not send tx")
+		lEvt := log.Err(err).Str("addr", actor.Addr).Str("amount", msg.Amount.String())
+		if res != nil {
+			lEvt.Uint32("txCode", res.Code).
+				Str("txCodespace", res.Codespace).
+				Str("txLog", res.Log).
+				Str("txHash", res.Hash.String())
+		}
+		lEvt.Msg("Could not send tx")
 	} else if res.Code == 0 {
 		state.decreaseActorBalance(actor.Addr, msg.Amount.AmountOf(config.Denom))
 	}
