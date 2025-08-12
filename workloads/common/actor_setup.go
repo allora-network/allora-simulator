@@ -52,7 +52,7 @@ func CreateAndFundActors(
 		log.Fatal().Err(err).Msgf("Failed to get account info")
 	}
 
-	err = fundActors(
+	err = FundActors(
 		faucet,
 		actorsList,
 		preFundAmount,
@@ -100,7 +100,7 @@ func createActors(numToCreate int, config *types.Config, rand io.Reader) []*type
 }
 
 // Fund every target address from the sender in amount coins
-func fundActors(
+func FundActors(
 	sender *types.Actor,
 	targets []*types.Actor,
 	amount cosmosmath.Int,

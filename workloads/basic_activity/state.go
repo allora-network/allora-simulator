@@ -9,6 +9,8 @@ import (
 )
 
 type State struct {
+	faucet *types.Actor
+
 	actors        []*types.Actor
 	actorsPerAddr map[string]*types.Actor
 	balances      map[string]math.Int
@@ -16,7 +18,7 @@ type State struct {
 	mutex sync.Mutex
 }
 
-func NewState(actors []*types.Actor, balance math.Int) *State {
+func NewState(faucet *types.Actor, actors []*types.Actor, balance math.Int) *State {
 	balances := make(map[string]math.Int, len(actors))
 	perAddr := make(map[string]*types.Actor, len(actors))
 	for _, actor := range actors {
@@ -25,6 +27,7 @@ func NewState(actors []*types.Actor, balance math.Int) *State {
 	}
 
 	return &State{
+		faucet:        faucet,
 		actors:        actors,
 		actorsPerAddr: perAddr,
 		balances:      balances,
