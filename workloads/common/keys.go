@@ -2,18 +2,22 @@ package common
 
 import (
 	"fmt"
+	"io"
 
-	"github.com/cometbft/cometbft/crypto/secp256k1"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
-func GeneratePrivKey() (cryptotypes.PrivKey, cryptotypes.PubKey, string) {
-	algo := hd.Secp256k1
+func GeneratePrivKey(rand io.Reader) (cryptotypes.PrivKey, cryptotypes.PubKey, string) {
+	privKey, err := secp256k1.GeneratePrivateKeyFromRand(rand)
+	if err != nil {
+		panic(err)
+	}
 
-	privKey := secp256k1.GenPrivKey()
-	privKeyCrypto := algo.Generate()(privKey.Bytes())
+	algo := hd.Secp256k1
+	privKeyCrypto := algo.Generate()(privKey.Serialize())
 	pubKey := privKeyCrypto.PubKey()
 
 	addressbytes := sdk.AccAddress(pubKey.Address().Bytes())

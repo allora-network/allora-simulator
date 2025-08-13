@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"math/rand"
 	"os"
 	"time"
 
@@ -54,6 +55,7 @@ func main() {
 		mnemonic,
 		numActors,
 		config.EpochLength,
+		rand.New(rand.NewSource(time.Now().UnixNano())),
 	)
 	log.Info().Msgf("Successfully created and funded all actors")
 

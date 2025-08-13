@@ -1,28 +1,33 @@
 package types
 
 import (
+	cryptorand "crypto/rand"
+	"math/big"
+	"math/rand/v2"
 	"strconv"
 
+	"cosmossdk.io/math"
 )
 
 type Config struct {
-	ChainID               string         `json:"chain_id"`
-	Denom                 string         `json:"denom"`
-	Prefix                string         `json:"prefix"`
-	GasPerByte            uint64          `json:"gas_per_byte"`
-	BaseGas               uint64          `json:"base_gas"`
-	GasAdjustment         float64        `json:"gas_adjustment"`
-	OverrideFee           uint64         `json:"override_fee"`
-	MaxFees               uint64         `json:"max_fees"`
-	EpochLength           int64          `json:"epoch_length"`
-	NumTopics             int            `json:"num_topics"`
-	InferersPerTopic      int            `json:"inferers_per_topic"`
-	ForecastersPerTopic   int            `json:"forecasters_per_topic"`
-	ReputersPerTopic      int            `json:"reputers_per_topic"`
-	CreateTopicsSameBlock bool           `json:"create_topics_same_block"`
-	TimeoutMinutes        int64          `json:"timeout_minutes"`
-	Nodes                 NodesConfig    `json:"nodes"`
-	Research              ResearchConfig `json:"research"`
+	ChainID               string              `json:"chain_id"`
+	Denom                 string              `json:"denom"`
+	Prefix                string              `json:"prefix"`
+	GasPerByte            uint64              `json:"gas_per_byte"`
+	BaseGas               uint64              `json:"base_gas"`
+	GasAdjustment         float64             `json:"gas_adjustment"`
+	OverrideFee           uint64              `json:"override_fee"`
+	MaxFees               uint64              `json:"max_fees"`
+	EpochLength           int64               `json:"epoch_length"`
+	NumTopics             int                 `json:"num_topics"`
+	InferersPerTopic      int                 `json:"inferers_per_topic"`
+	ForecastersPerTopic   int                 `json:"forecasters_per_topic"`
+	ReputersPerTopic      int                 `json:"reputers_per_topic"`
+	CreateTopicsSameBlock bool                `json:"create_topics_same_block"`
+	TimeoutMinutes        int64               `json:"timeout_minutes"`
+	Nodes                 NodesConfig         `json:"nodes"`
+	Research              ResearchConfig      `json:"research"`
+	BasicActivity         BasicActivityConfig `json:"basic_activity"`
 }
 
 type NodesConfig struct {
@@ -202,4 +207,49 @@ type GroundTruthState struct {
 	CumulativeReturn float64
 	CurrentPrice     float64
 	LastReturn       float64
+}
+
+// BASIC ACTIVITY MODULE
+
+type BasicActivityConfig struct {
+	NumActors      int             `json:"num_actors"`
+	RandWalletSeed int64           `json:"rand_wallet_seed"`
+	TxsPerBlock    Range[uint32]   `json:"txs_per_block"`
+	SendAmount     Range[math.Int] `json:"send_amount"`
+	RefundAmount   math.Int        `json:"refund_amount"`
+}
+
+type Range[T intType] struct {
+	Min T `json:"min"`
+	Max T `json:"max"`
+}
+
+type intType interface {
+	uint32 | math.Int
+}
+
+func (rng Range[T]) RandInBetween() T {
+	var t T
+	tAny := any(t)
+	switch tAny.(type) {
+	case math.Int:
+		lo := any(rng.Min).(math.Int).BigInt()
+		hi := any(rng.Max).(math.Int).BigInt()
+
+		n := new(big.Int).Sub(hi, lo)
+		n = n.Add(n, big.NewInt(1))
+		r, err := cryptorand.Int(cryptorand.Reader, n)
+		if err != nil {
+			panic(err)
+		}
+		r = r.Add(r, lo)
+
+		return any(math.NewIntFromBigInt(r)).(T)
+	case uint32:
+		lo := any(rng.Min).(uint32)
+		hi := any(rng.Max).(uint32)
+		return any(rand.N(hi-lo+1) + lo).(T)
+	default:
+		panic("unsupported type for Range")
+	}
 }

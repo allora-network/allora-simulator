@@ -43,5 +43,18 @@
       "global_params": {
         "max_samples_to_scale_scores": 10
       }
+    },
+    "basic_activity": {
+      "num_actors": 15,
+      "rand_wallet_seed": 12345,
+      "txs_per_block": {
+        "min": 5,
+        "max": 10
+      },
+      "send_amount": {
+        "min": "1000000000000000000",
+        "max": "15000000000000000000"
+      },
+      "refund_amount": "20000000000000000000"
     }
 }

@@ -14,6 +14,10 @@ stress:
 research:
 	go run cmd/research/main.go
 
+# Run the basic activity mode
+basic:
+	go run cmd/basic_activity/main.go
+
 # Starts a local L1 testnet using a script
 localnet:
 	@export VALIDATOR_NUMBER=$${VALIDATOR_NUMBER:-3}; \
