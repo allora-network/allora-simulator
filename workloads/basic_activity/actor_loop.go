@@ -24,19 +24,18 @@ func Start(config *types.Config, state *State) error {
 		for t := uint32(0); t < txCount; t++ {
 			sendAmount := config.BasicActivity.SendAmount.RandInBetween()
 
-			for i, a := range actors {
-				if state.balances[a.Addr].GT(sendAmount) {
-					sends[a.Addr] = banktypes.MsgSend{
-						FromAddress: a.Addr,
-						ToAddress:   state.pickRandomActorExcept(a.Addr).Addr,
-						Amount:      sdktypes.NewCoins(sdktypes.NewCoin(config.Denom, sendAmount)),
-					}
-				} else {
-					toRefund = append(toRefund, a)
+			actor := actors[0]
+			if state.balances[actor.Addr].GT(sendAmount) {
+				sends[actor.Addr] = banktypes.MsgSend{
+					FromAddress: actor.Addr,
+					ToAddress:   state.pickRandomActorExcept(actor.Addr).Addr,
+					Amount:      sdktypes.NewCoins(sdktypes.NewCoin(config.Denom, sendAmount)),
 				}
-
-				actors = append(actors[:i], actors[i+1:]...)
+			} else {
+				toRefund = append(toRefund, actor)
 			}
+
+			actors = actors[1:]
 		}
 
 		log.Info().Int("txCount", len(sends)).Int("refundCount", len(toRefund)).Msg("Sending transactions")
